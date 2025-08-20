@@ -16,5 +16,10 @@
     "url": "https://github.com/D4rK14/Control_de_asistencia/issues"
   },
   "homepage": "https://github.com/D4rK14/Control_de_asistencia#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-handlebars": "^8.0.2",
+    "handlebars": "^4.7.8"
+  }
 }
