@@ -1,61 +1,62 @@
--- Crear la base de datos
-CREATE DATABASE IF NOT EXISTS control_asistencia;
-USE control_asistencia;
+-- Create database
+CREATE DATABASE IF NOT EXISTS attendance_control;
+USE attendance_control;
 
 -- ===========================================
--- TABLA: usuarios
+-- TABLA: users
 -- ===========================================
-CREATE TABLE usuarios (
-    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL,
-    correo VARCHAR(100) UNIQUE NOT NULL,
-    contraseña VARCHAR(255) NOT NULL, -- Guardar siempre encriptada (bcrypt recomendado)
-    rol ENUM('admin','empleado') DEFAULT 'empleado',
-    estado ENUM('activo','inactivo') DEFAULT 'activo',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL, -- Guardar siempre encriptada (bcrypt recomendado)
+    role ENUM('admin','employee') DEFAULT 'employee',
+    status ENUM('active','inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ===========================================
--- TABLA: asistencias
+-- TABLA: attendances
 -- ===========================================
-CREATE TABLE asistencias (
-    id_asistencia INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario INT NOT NULL,
-    fecha DATE NOT NULL,
-    hora_entrada TIME DEFAULT NULL,
-    hora_salida TIME DEFAULT NULL,
-    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
+CREATE TABLE attendances (
+    attendance_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    date DATE NOT NULL,
+    check_in TIME DEFAULT NULL,
+    check_out TIME DEFAULT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    UNIQUE (id_usuario, fecha) -- Un registro por día por usuario
+    UNIQUE (user_id, date) -- Un registro por día por usuario
 );
 
 -- ===========================================
--- TABLA: logs_acciones
+-- TABLA: action_logs
 -- (para auditoría de acciones del administrador)
 -- ===========================================
-CREATE TABLE logs_acciones (
-    id_log INT AUTO_INCREMENT PRIMARY KEY,
-    id_admin INT NOT NULL,
-    accion ENUM('crear','modificar','eliminar') NOT NULL,
-    id_usuario_afectado INT,
-    fecha_accion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_admin) REFERENCES usuarios(id_usuario)
+CREATE TABLE action_logs (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT NOT NULL,
+    action ENUM('create','update','delete') NOT NULL,
+    affected_user_id INT,
+    action_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (admin_id) REFERENCES users(user_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (id_usuario_afectado) REFERENCES usuarios(id_usuario)
+    FOREIGN KEY (affected_user_id) REFERENCES users(user_id)
         ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- ===========================================
--- TABLA: calendario_laboral
+-- TABLA: work_calendar
 -- (para distinguir días hábiles y feriados)
 -- ===========================================
-CREATE TABLE calendario_laboral (
-    id_fecha INT AUTO_INCREMENT PRIMARY KEY,
-    fecha DATE UNIQUE NOT NULL,
-    es_laboral BOOLEAN DEFAULT TRUE, -- TRUE = día laboral, FALSE = feriado/fin de semana
-    descripcion VARCHAR(255) DEFAULT NULL
+CREATE TABLE work_calendar (
+    calendar_id INT AUTO_INCREMENT PRIMARY KEY,
+    date DATE UNIQUE NOT NULL,
+    is_working_day BOOLEAN DEFAULT TRUE, -- TRUE = día laboral, FALSE = feriado/fin de semana
+    description VARCHAR(255) DEFAULT NULL
 );
+
 
 -- ===========================================
 -- DATOS DE PRUEBA
