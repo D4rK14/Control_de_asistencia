@@ -1,30 +1,72 @@
-<div class="card p-4 shadow mb-4">
-  <h2>Bienvenido,{{usuario.nombre}}</h2>
-  <p>Panel de usuario.</p>
-</div>
 
-<div class="row mt-4">
-  <!-- Marcar -->
-  <div class="col-md-4 mb-3">
-    <div class="card text-bg-primary p-3 text-center shadow-sm">
-      <h5>Marcar asistencia</h5>
-      <a href="" class="btn btn-light w-100 mt-2">Marcar</a>
+<body>
+  <div class="container mt-4 mb-4">
+    <h2 class="mb-4">Bienvenido, {{usuario.nombre}}</h2>
+
+    <!-- Marcación de asistencia -->
+    <div class="card mb-4">
+      <div class="card-header">Marcación de Asistencia</div>
+      <div class="card-body">
+        <form action="" method="POST">
+          <button type="submit" name="tipo" value="entrada" class="btn btn-success me-2">Registrar Entrada</button>
+          <button type="submit" name="tipo" value="salida" class="btn btn-danger">Registrar Salida</button>
+        </form>
+      </div>
     </div>
+
+    <!-- Reportes personales -->
+    <div class="card mb-4">
+      <div class="card-header">Tus Reportes</div>
+      <div class="card-body">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora Entrada</th>
+              <th>Hora Salida</th>
+              <th>Tipo</th>
+              <th>Justificación</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each asistencias}}
+            <tr>
+              <td>{{this.fecha}}</td>
+              <td>{{this.hora_entrada}}</td>
+              <td>{{this.hora_salida}}</td>
+              <td>{{this.tipo_asistencia}}</td>
+              <td>
+                {{#if this.documento}}
+                  <a href="{{this.documento}}" target="_blank">Ver</a>
+                {{else}}
+                  -
+                {{/if}}
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Justificar inasistencias -->
+    <div class="card mb-4">
+      <div class="card-header">Justificar Inasistencias</div>
+      <div class="card-body">
+        <form action="" method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="fecha" class="form-label">Fecha de la Inasistencia</label>
+            <input type="date" class="form-control" id="fecha" name="fecha" required>
+          </div>
+          <div class="mb-3">
+            <label for="documento" class="form-label">Documento de Justificación</label>
+            <input type="file" class="form-control" id="documento" name="documento" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Enviar Justificación</button>
+        </form>
+      </div>
+    </div>
+
   </div>
 
-  <!-- asistencias -->
-  <div class="col-md-4 mb-3">
-    <div class="card text-bg-success p-3 text-center shadow-sm">
-      <h5>Ver mis asistencias</h5>
-      <a href="" class="btn btn-light w-100 mt-2">Ver</a>
-    </div>
-  </div>
-
-  <!-- Justificar  -->
-  <div class="col-md-4 mb-3">
-    <div class="card text-bg-warning p-3 text-center shadow-sm">
-      <h5>Justificar inasistencia</h5>
-      <a href="" class="btn btn-light w-100 mt-2">Subir licencia</a>
-    </div>
-  </div>
-</div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
