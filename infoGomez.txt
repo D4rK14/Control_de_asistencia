@@ -27,7 +27,18 @@ se presenta el día 25 de septiembre y se dicerta el 2 de octubre
 diagrama de BPMN (diagrama de procesos de negocios).
 diagrama de MER
 
-servidor NTP para cambios de horario
+*servidor NTP para cambios de horario*
 
-Cristóbal Hernan Gómez Torres
-Estudiante en Ingeniería Informática
+*Cristóbal Hernan Gómez Torres
+Estudiante en Ingeniería Informática*
+
+
+vistas:
+
+- Login
+- Menu('
+    botones de asistencia,
+    apartado para agregar licencias,
+
+    ')
+- 
