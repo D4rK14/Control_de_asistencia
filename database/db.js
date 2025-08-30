@@ -6,3 +6,5 @@ const sequelize = new Sequelize('', 'root', '', {
 });
 
 module.export = sequelize;
+
+console.log('Hola mundo!')
