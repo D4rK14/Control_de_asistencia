@@ -13,7 +13,7 @@ ventana 3: puede ver las opciones dependiendo del usuario
 
 no se necesita crear una tabla de atrasados, solo se puede con un where
 
-rolos:
+roles:
 -informático (OPCIONAL) = puede hacer lo que sea.
 -administrador = puede generar informes.
 - usuario normal = es el usuario normal (marca asistencia).
