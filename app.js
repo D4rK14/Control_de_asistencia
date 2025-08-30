@@ -47,10 +47,6 @@ app.engine('.hbs', engine({
 app.set('view engine', '.hbs');
 app.set('views', path.join(__dirname, 'views'));      // Carpeta donde se encuentran las vistas
 
-// Logs de hora en consola
-console.log('Hora UTC:', ahoraUTC);
-console.log('Hora en Chile:', ahoraChile);
-
 /**
  * Ruta principal "/"
  * 
