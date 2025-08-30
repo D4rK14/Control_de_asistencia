@@ -1,0 +1,33 @@
+el Rut.
+el área de trabajo.
+
+recursos humanos, cuenta normal: ver asistencia, errores de sistemas.
+
+recursos humanos, cuenta administrador: puede ver que ocurre, por ejemplo ver el registro de asistencia.
+
+nunca se borra nada en una base de datos, se deja como inhabilitado.
+
+ventana 1: es administrador o usuario estándar
+ventana 2: inicio de sesión
+ventana 3: puede ver las opciones dependiendo del usuario
+
+no se necesita crear una tabla de atrasados, solo se puede con un where
+
+rolos:
+-informático (OPCIONAL) = puede hacer lo que sea.
+-administrador = puede generar informes.
+- usuario normal = es el usuario normal (marca asistencia).
+
+JUSTIFICAR INASISTENCIA: EL DIA
+TIPOS DE ASISTENCIA:
+-Se presento, no se presento, llego atrasado, justificado, salida anticipada, salida tardía.
+
+se presenta el día 25 de septiembre y se dicerta el 2 de octubre
+
+diagrama de BPMN (diagrama de procesos de negocios).
+diagrama de MER
+
+servidor NTP para cambios de horario
+
+Cristóbal Hernan Gómez Torres
+Estudiante en Ingeniería Informática
