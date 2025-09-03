@@ -54,13 +54,14 @@ app.set('views', path.join(__dirname, 'views'));      // Carpeta donde se encuen
  * las variables con las horas en Chile y UTC.
  */
 app.get('/', (req, res) => {
-    ///res.render('usuario/admin');
+    ///res.render('usuario/dashboard_usuario');
     res.send('hola mundo');
 });
 
 /**
  * Levantar servidor en el puerto definido
  */
+
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
