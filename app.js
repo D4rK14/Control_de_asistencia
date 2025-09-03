@@ -54,9 +54,8 @@ app.set('views', path.join(__dirname, 'views'));      // Carpeta donde se encuen
  * las variables con las horas en Chile y UTC.
  */
 app.get('/', (req, res) => {
-    ///res.render('usuario/dashboard_usuario');
-    res.send('hola mundo');
-    res.render('home', { ahoraChile, ahoraUTC });
+    res.render('usuario/login');
+    ///res.send('hola mundo');
 });
 
 /**
