@@ -50,8 +50,8 @@ app.set('views', path.join(__dirname, 'views'));      // Carpeta donde se encuen
 /**
  * Ruta principal "/"
  * 
- * Renderiza la vista "home.hbs" y envía como contexto
- * las variables con las horas en Chile y UTC.
+ * Renderiza la vista "login.hbs"
+ * 
  */
 app.get('/', (req, res) => {
     res.render('usuario/login');
