@@ -1,4 +1,6 @@
-body {
+.background {
+    border-radius: 15px;
     background-color: black;
     color: red;
-}
+    text-align: center;
+};

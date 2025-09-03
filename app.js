@@ -27,7 +27,7 @@ console.log('Hora en Chile;', ahoraChile);
 
 
 app.get('/', (req, res) => {
-    res.render('home', { ahoraChile, ahoraUTC });
+    res.render('login', { ahoraChile, ahoraUTC });
 });
 
 app.listen(PORT, () => {
