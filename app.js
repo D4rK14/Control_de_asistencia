@@ -56,6 +56,7 @@ app.set('views', path.join(__dirname, 'views'));      // Carpeta donde se encuen
 app.get('/', (req, res) => {
     ///res.render('usuario/admin');
     res.send('hola mundo');
+    res.render('home', { ahoraChile, ahoraUTC });
 });
 
 /**
