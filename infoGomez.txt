@@ -41,4 +41,37 @@ vistas:
     apartado para agregar licencias,
 
     ')
-- 
+
+
+parte 2
+
+Definición del problema:
+Son todos los requisitos.
+Que impacto habarcara en la empresa.(Opcional)
+4. Proyecto 
+Es todo lo que es prototipo
+4.1 diagramas 
+   -RPMN (Todos los procesos
+Cómo hacemos reporte,
+Cómo se marca la asistencia,
+)
+   -MER (como funciona la base de datos)
+   -SCRIPT BDD.
+4.3 carta gantt: hay que escribirla.
+4.3.1 describir cada actividad
+4.4 las pruebas realizadas en el prototipo y sus resultados.
+-Prueba de Validación.
+-etc...
+5. CONCLUSIÓNES.
+6. BIBLIOGRAFIA.
+
+Se entrega en un archivo ZIP.
+
+Se entrega antes del 23 los roles y preguntas.
+
+Son días de corrido no días habiles, los días son de corrido.
+
+Recursos humanos puede:
+-  sacar informe de asistencia por el rut de los usuarios.
+- puede ver y aprobar las licencias.
+-
