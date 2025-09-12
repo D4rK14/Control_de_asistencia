@@ -9,7 +9,6 @@ const User = sequelize.define('User', {
     },
     rut: {
         type: DataTypes.STRING,
-        foreignKey: true
     },
     nombre:{
         type: DataTypes.STRING,
@@ -26,6 +25,16 @@ const User = sequelize.define('User', {
     id_rol: {
         type: DataTypes.INTEGER
     }
+});
+
+User.belongsTo(Rol, {
+    foreignKey: 'id_rol',
+    as: 'rol'
+});
+
+Rol.hasMany(User, {
+    foreignKey: 'id_rol',
+    as: 'usuarios'
 });
 
 module.exports = User;
