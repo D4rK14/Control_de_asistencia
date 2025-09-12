@@ -7,24 +7,24 @@ const User = sequelize.define('User', {
         primaryKey: true,
         autoIncrement: true
     },
-    username:{
+    rut: {
+        type: DataTypes.STRING,
+        foreignKey: true
+    },
+    nombre:{
         type: DataTypes.STRING,
     },
-    email: {
+    apellido:{
+        type: DataTypes.STRING,
+    },
+    correo: {
         type: DataTypes.STRING
     },
     password: {
         type: DataTypes.STRING
     },
-    rol: {
-        type: DataTypes.STRING
-    },
-    state: {
-        type: DataTypes.BOOLEAN
-    },
-    date: {
-        type: DataTypes.DATE,
-        notNull: true
+    id_rol: {
+        type: DataTypes.INTEGER
     }
 });
 
