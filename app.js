@@ -18,6 +18,8 @@ const fs = require('fs');                             // Módulo para manejo de 
 const pdfParse = require('pdf-parse');                // Librería para extraer texto de PDFs
 const { extraerDatosLicencia } = require("./pdfExtractor"); // Función personalizada para extraer datos de licencias
 const multer = require("multer");                     // Middleware para manejo de archivos subidos
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
 
 // Inicialización de la aplicación
 const app = express();                                // Crea instancia de la aplicación Express
@@ -32,6 +34,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Middleware para parsear el cuerpo de las peticiones
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+// Configuración de la sesión
+app.use(cookieParser());
+app.use(session({
+    secret: 'una_clave_secreta_muy_segura', // Cambia esto por una clave segura en un entorno de producción
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Poner en true si usas HTTPS
+}));
 
 // Obtención de las fechas y horas
 const ahoraChile = moment()                           // Fecha/hora actual

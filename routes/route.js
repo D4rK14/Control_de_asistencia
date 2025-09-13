@@ -22,4 +22,15 @@ router.get('/upload', (req, res) => {
     res.render('pdf/enviarLicencia');
 });
 
+// Ruta para cerrar sesión
+router.get('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.redirect('/dashboard'); // O a donde quieras redirigir en caso de error
+        }
+        res.clearCookie('connect.sid');
+        res.redirect('/');
+    });
+});
+
 module.exports = router;
