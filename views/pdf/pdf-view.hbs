@@ -1,0 +1,21 @@
+<div class="text-center">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Datos Extraídos</h1>
+    <p class="text-gray-600 mb-8">Se ha procesado la licencia médica exitosamente.</p>
+</div>
+
+<div class="mt-6 border-t border-gray-200">
+    <dl class="divide-y divide-gray-200">
+        {{#each datos}}
+        <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+            <dt class="text-sm font-medium text-gray-500 capitalize">{{@key}}</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{this}}</dd>
+        </div>
+        {{/each}}
+    </dl>
+</div>
+
+<div class="mt-8 text-center">
+    <a href="/" class="w-full inline-flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors sm:w-auto">
+        Subir Otro Archivo
+    </a>
+</div>
