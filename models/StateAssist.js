@@ -1,6 +1,8 @@
+// models/EstadoAsistencia.js
 const { DataTypes } = require('sequelize');
-const sequelize = require('../database/db');
+const sequelize = require('../config/database.js'); // Asegúrate que database.js exporte `module.exports = sequelize;`
 
+// Definición del modelo
 const StateAssisting = sequelize.define('EstadoAsistencia', {
     id: {
         type: DataTypes.INTEGER,
@@ -10,9 +12,9 @@ const StateAssisting = sequelize.define('EstadoAsistencia', {
     estado: {
         type: DataTypes.STRING,
     },
-    descripcion:{
+    descripcion: {
         type: DataTypes.STRING,
     },
-},{timestamps: false});
+}, { timestamps: false });
 
 module.exports = StateAssisting;
