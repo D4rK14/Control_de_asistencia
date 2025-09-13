@@ -1,5 +1,6 @@
 const sequelize = require('../database/db');
 const { DataTypes } = require('sequelize');
+const Rol = require('./Rol');
 
 const User = sequelize.define('User', {
     id: {
@@ -7,25 +8,34 @@ const User = sequelize.define('User', {
         primaryKey: true,
         autoIncrement: true
     },
-    username:{
+    rut: {
         type: DataTypes.STRING,
     },
-    email: {
+    nombre:{
+        type: DataTypes.STRING,
+    },
+    apellido:{
+        type: DataTypes.STRING,
+    },
+    correo: {
         type: DataTypes.STRING
     },
     password: {
         type: DataTypes.STRING
     },
-    rol: {
-        type: DataTypes.STRING
-    },
-    state: {
-        type: DataTypes.BOOLEAN
-    },
-    date: {
-        type: DataTypes.DATE,
-        notNull: true
+    id_rol: {
+        type: DataTypes.INTEGER
     }
+});
+
+User.belongsTo(Rol, {
+    foreignKey: 'id_rol',
+    as: 'rol'
+});
+
+Rol.hasMany(User, {
+    foreignKey: 'id_rol',
+    as: 'usuarios'
 });
 
 module.exports = User;
