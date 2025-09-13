@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../database/db');
 
-const Rol = sequelize.define('Rol', {
+const Rol = sequelize.define('rol', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -12,7 +12,7 @@ const Rol = sequelize.define('Rol', {
     },
     descripcion: {
         type: DataTypes.STRING,
-    }
-});
+    },
+}, {timestamps: false});
 
 module.exports = Rol;

@@ -2,7 +2,7 @@ const sequelize = require('../database/db');
 const { DataTypes } = require('sequelize');
 const Rol = require('./Rol');
 
-const User = sequelize.define('User', {
+const User = sequelize.define('user', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -25,8 +25,8 @@ const User = sequelize.define('User', {
     },
     id_rol: {
         type: DataTypes.INTEGER
-    }
-});
+    },
+},{timestamps: false});
 
 User.belongsTo(Rol, {
     foreignKey: 'id_rol',

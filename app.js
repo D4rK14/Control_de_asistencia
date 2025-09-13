@@ -15,14 +15,14 @@ const { engine } = require('express-handlebars');     // Motor de plantillas Han
 const path = require('path');                         // Módulo para rutas
 const moment = require('moment-timezone');            // Manejo de fechas con zonas horarias
 const fs = require('fs');                             // Módulo para manejo de archivos
-const pdfParse = require('pdf-parse');                     // Librería para extraer texto de PDFs
-const path = require('path');                         // Módulo para manejo de rutas
+const pdfParse = require('pdf-parser');                     // Librería para extraer texto de PDFs
 const { extraerDatosLicencia } = require("./pdfExtractor"); // Función personalizada para extraer datos de licencias
 const multer = require("multer");               // Middleware para manejo de archivos subidos
+const sequelize = require('./database/db');
 
 // Inicialización de la aplicación
 const app = express();                                // Crea instancia de la aplicación Express
-const PORT = 3000;         
+const PORT = 3000;
 
 // --- Configuración de Multer para la subida de archivos ---
 const upload = multer({ dest: "uploads/" });// Puerto donde se ejecutará el servidor
@@ -93,6 +93,8 @@ app.get('/', (req, res) => {
  * Levantar servidor en el puerto definido
  */
 
-app.listen(PORT, () => {
+sequelize.sync().then(() => {
+    app.listen(PORT, () => {
     console.log(`Servidor escuchando en http://localhost:${PORT}`);
+});
 });
