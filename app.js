@@ -14,10 +14,18 @@ const express = require('express');                   // Framework web
 const { engine } = require('express-handlebars');     // Motor de plantillas Handlebars
 const path = require('path');                         // Módulo para rutas
 const moment = require('moment-timezone');            // Manejo de fechas con zonas horarias
+const fs = require('fs');                             // Módulo para manejo de archivos
+const pdfParse = require('pdf-parse');                     // Librería para extraer texto de PDFs
+const path = require('path');                         // Módulo para manejo de rutas
+const { extraerDatosLicencia } = require("./pdfExtractor"); // Función personalizada para extraer datos de licencias
+const multer = require("multer");               // Middleware para manejo de archivos subidos
 
 // Inicialización de la aplicación
 const app = express();                                // Crea instancia de la aplicación Express
-const PORT = 3000;                                    // Puerto donde se ejecutará el servidor
+const PORT = 3000;         
+
+// --- Configuración de Multer para la subida de archivos ---
+const upload = multer({ dest: "uploads/" });// Puerto donde se ejecutará el servidor
 
 // Obtención de las fechas y horas
 const ahoraChile = moment()                           // Fecha/hora actual
@@ -46,6 +54,27 @@ app.engine('.hbs', engine({
 // Establecer Handlebars como motor de vistas
 app.set('view engine', '.hbs');
 app.set('views', path.join(__dirname, 'views'));      // Carpeta donde se encuentran las vistas
+
+app.post("/upload", upload.single("pdfFile"), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).send("No se ha subido ningún archivo.");
+    }
+    const filePath = req.file.path;
+    try {
+        const dataBuffer = fs.readFileSync(filePath);
+        const data = await pdfParse(dataBuffer);
+
+        // Usamos la función importada para procesar el texto.
+        const datosExtraidos = extraerDatosLicencia(data.text);
+        
+        res.render("pdf-view", { datos: datosExtraidos });
+    } catch (err) {
+        console.error("Error al procesar PDF:", err);
+        res.status(500).send("Error al procesar el PDF. Asegúrate de que es un archivo válido.");
+    } finally {
+        fs.unlinkSync(filePath);
+    }
+});
 
 /**
  * Ruta principal "/"
