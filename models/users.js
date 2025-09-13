@@ -18,13 +18,13 @@ const User = sequelize.define('users', {
         type: DataTypes.STRING,
     },
     correo: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
     },
     password: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
     },
     id_rol: {
-        type: DataTypes.INTEGER
+        type: DataTypes.INTEGER,
     },
 },{timestamps: false});
 

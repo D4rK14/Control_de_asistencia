@@ -12,7 +12,7 @@ const StateAssisting = sequelize.define('EstadoAsistencia', {
     },
     descripcion:{
         type: DataTypes.STRING,
-    }
+    },
 },{timestamps: false});
 
 module.exports = StateAssisting;
