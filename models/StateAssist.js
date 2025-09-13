@@ -1,5 +1,5 @@
-const sequelize = require('../database/db');
 const { DataTypes } = require('sequelize');
+const sequelize = require('../database/db');
 
 const StateAssisting = sequelize.define('EstadoAsistencia', {
     id: {
@@ -13,6 +13,6 @@ const StateAssisting = sequelize.define('EstadoAsistencia', {
     descripcion:{
         type: DataTypes.STRING,
     }
-});
+},{timestamps: false});
 
 module.exports = StateAssisting;

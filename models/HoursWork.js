@@ -1,5 +1,5 @@
-const sequelize = require('../database/db');
 const { DataTypes } = require('sequelize');
+const sequelize = require('../database/db');
 
 const HoursWorking = sequelize.define('HorasTrabajadas', {
     id: {
@@ -13,6 +13,6 @@ const HoursWorking = sequelize.define('HorasTrabajadas', {
     salida: {
         type: DataTypes.STRING,
     }
-});
+},{{timestamps: false}});
 
 module.exports = HoursWorking;
