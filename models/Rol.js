@@ -12,7 +12,10 @@ const Rol = sequelize.define('rols', {
     },
     descripcion: {
         type: DataTypes.STRING,
+
     },
 }, {timestamps: false});
+
+
 
 module.exports = Rol;

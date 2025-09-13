@@ -14,18 +14,36 @@ const express = require('express');                   // Framework web
 const { engine } = require('express-handlebars');     // Motor de plantillas Handlebars
 const path = require('path');                         // Módulo para rutas
 const moment = require('moment-timezone');            // Manejo de fechas con zonas horarias
-const fs = require('fs');                             // Módulo para manejo de archivos
-const pdfParse = require('pdf-parser');                     // Librería para extraer texto de PDFs
-const { extraerDatosLicencia } = require("./pdfExtractor"); // Función personalizada para extraer datos de licencias
-const multer = require("multer");               // Middleware para manejo de archivos subidos
+const fs = require('fs');                             // Módulo para manejo de archivos            // Middleware para manejo de archivos subidos
 const sequelize = require('./database/db');
+const pdfParse = require('pdf-parse');                // Librería para extraer texto de PDFs
+const { extraerDatosLicencia } = require("./pdfExtractor"); // Función personalizada para extraer datos de licencias
+const multer = require("multer");                     // Middleware para manejo de archivos subidos
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
 
 // Inicialización de la aplicación
 const app = express();                                // Crea instancia de la aplicación Express
 const PORT = 3000;
 
 // --- Configuración de Multer para la subida de archivos ---
-const upload = multer({ dest: "uploads/" });// Puerto donde se ejecutará el servidor
+const upload = multer({ dest: "uploads/" });
+
+// Servir archivos estáticos desde la carpeta 'public'
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Middleware para parsear el cuerpo de las peticiones
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
+// Configuración de la sesión
+app.use(cookieParser());
+app.use(session({
+    secret: 'una_clave_secreta_muy_segura', // Cambia esto por una clave segura en un entorno de producción
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Poner en true si usas HTTPS
+}));
 
 // Obtención de las fechas y horas
 const ahoraChile = moment()                           // Fecha/hora actual
@@ -67,7 +85,7 @@ app.post("/upload", upload.single("pdfFile"), async (req, res) => {
         // Usamos la función importada para procesar el texto.
         const datosExtraidos = extraerDatosLicencia(data.text);
         
-        res.render("pdf-view", { datos: datosExtraidos });
+        res.render("pdf/pdf-view", { datos: datosExtraidos });
     } catch (err) {
         console.error("Error al procesar PDF:", err);
         res.status(500).send("Error al procesar el PDF. Asegúrate de que es un archivo válido.");
@@ -76,18 +94,9 @@ app.post("/upload", upload.single("pdfFile"), async (req, res) => {
     }
 });
 
-/**
- * Ruta principal "/"
- * 
- * Renderiza la vista "login.hbs"
- * 
- */
-const Rutas = require('./routes/route');
-app.use('/login',Rutas);
-
-app.get('/', (req, res) => {
-    res.render('home');
-});
+// Rutas principales
+const mainRoutes = require('./routes/route');
+app.use('/', mainRoutes);
 
 /**
  * Levantar servidor en el puerto definido
