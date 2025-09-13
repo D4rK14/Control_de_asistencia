@@ -57,8 +57,7 @@ const Rutas = require('./routes/route');
 app.use('/login',Rutas);
 
 app.get('/', (req, res) => {
-    res.render('usuario/login');
-    ///res.send('hola mundo');
+    res.render('home');
 });
 
 /**
