@@ -13,6 +13,6 @@ const HoursWorking = sequelize.define('HorasTrabajadas', {
     salida: {
         type: DataTypes.STRING,
     }
-},{{timestamps: false}});
+},{timestamps: false});
 
 module.exports = HoursWorking;
