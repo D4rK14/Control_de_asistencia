@@ -32,10 +32,15 @@ const login = async (req, res) => {
         const user = await User.findOne({ where: { rut } });
         console.log("Usuario encontrado:", user);
 
-        if (!user || !bcrypt.compareSync(password, user.password)) {
-            console.log("Error: credenciales inválidas");
-            return res.status(401).render("common/login", { error: "RUT o contraseña inválidos" });
-    }
+        if (!user) {
+            console.log("Error: usuario no existe");
+            return res.status(401).render("common/login", { error: "Usuario no registrado" });
+        }
+
+        if (!bcrypt.compareSync(password, user.password)) {
+            console.log("Error: contraseña incorrecta");
+            return res.status(401).render("common/login", { error: "Contraseña incorrecta" });
+        }
 
     console.log("Login correcto, generando tokens...");
     const accessToken = generateAccessToken(user);
