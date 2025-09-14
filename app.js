@@ -9,21 +9,23 @@
  * - moment-timezone: Manejo de fechas y horas con zonas horarias
  */
 
-// Importación de dependencias
-const express = require('express');                   // Framework web
-const { engine } = require('express-handlebars');     // Motor de plantillas Handlebars
-const path = require('path');                         // Módulo para rutas
-const moment = require('moment-timezone');            // Manejo de fechas con zonas horarias
-const fs = require('fs');                             // Módulo para manejo de archivos
-const pdfParse = require('pdf-parse');                // Librería para extraer texto de PDFs
-const { extraerDatosLicencia } = require("./pdfExtractor"); // Función personalizada para extraer datos de licencias
-const multer = require("multer");                     // Middleware para manejo de archivos subidos
+const express = require('express');
+const { engine } = require('express-handlebars');
+const path = require('path');
+const moment = require('moment-timezone');
+const sequelize = require('./config/database'); // CommonJS
+const multer = require('multer');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 
+// Importación de routers
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const pdfRoutes = require('./routes/pdfRoutes');
+
 // Inicialización de la aplicación
-const app = express();                                // Crea instancia de la aplicación Express
-const PORT = 3000;         
+const app = express();
+const PORT = 3000;
 
 // --- Configuración de Multer para la subida de archivos ---
 const upload = multer({ dest: "uploads/" });
@@ -32,75 +34,52 @@ const upload = multer({ dest: "uploads/" });
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware para parsear el cuerpo de las peticiones
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Configuración de la sesión
 app.use(cookieParser());
 app.use(session({
-    secret: 'una_clave_secreta_muy_segura', // Cambia esto por una clave segura en un entorno de producción
+    secret: 'una_clave_secreta_muy_segura',
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // Poner en true si usas HTTPS
+    cookie: { secure: false } 
 }));
 
 // Obtención de las fechas y horas
-const ahoraChile = moment()                           // Fecha/hora actual
-    .tz('America/Santiago')                           // Convertida a zona horaria de Chile
-    .format('YYYY-MM-DD HH:mm:ss');                   // Formato legible (ej: 2025-08-30 00:15:30)
+const ahoraChile = moment()
+    .tz('America/Santiago')
+    .format('YYYY-MM-DD HH:mm:ss');
 
-const ahoraUTC = moment()                             // Fecha/hora actual
-    .utc()                                            // Convertida a UTC
-    .format();                                        // Formato ISO estándar
+const ahoraUTC = moment()
+    .utc()
+    .format();
 
 /**
  * Configuración de Handlebars como motor de plantillas
- * 
- * - extname: extensión de archivos de vistas
- * - defaultLayout: layout principal
- * - layoutsDir: carpeta donde están los layouts
- * - partialsDir: carpeta con parciales reutilizables
  */
 app.engine('.hbs', engine({
-    extname: '.hbs',              
-    defaultLayout: 'main',        
+    extname: '.hbs',
+    defaultLayout: 'main',
     layoutsDir: path.join(__dirname, 'views/layouts'),
     partialsDir: path.join(__dirname, 'views/partials')
 }));
 
-// Establecer Handlebars como motor de vistas
 app.set('view engine', '.hbs');
-app.set('views', path.join(__dirname, 'views'));      // Carpeta donde se encuentran las vistas
+app.set('views', path.join(__dirname, 'views'));
 
-app.post("/upload", upload.single("pdfFile"), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).send("No se ha subido ningún archivo.");
-    }
-    const filePath = req.file.path;
-    try {
-        const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdfParse(dataBuffer);
-
-        // Usamos la función importada para procesar el texto.
-        const datosExtraidos = extraerDatosLicencia(data.text);
-        
-        res.render("pdf/pdf-view", { datos: datosExtraidos });
-    } catch (err) {
-        console.error("Error al procesar PDF:", err);
-        res.status(500).send("Error al procesar el PDF. Asegúrate de que es un archivo válido.");
-    } finally {
-        fs.unlinkSync(filePath);
-    }
-});
-
-// Rutas principales
-const mainRoutes = require('./routes/route');
-app.use('/', mainRoutes);
+/**
+ * Rutas principales
+ */
+app.use('/', authRoutes);
+app.use('/', userRoutes);
+app.use('/', pdfRoutes);
 
 /**
  * Levantar servidor en el puerto definido
  */
-
-app.listen(PORT, () => {
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
+sequelize.sync().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Servidor escuchando en http://localhost:${PORT}`);
+    });
 });

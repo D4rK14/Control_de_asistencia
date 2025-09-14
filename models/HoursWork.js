@@ -1,6 +1,9 @@
-const sequelize = require('../database/db');
-const { DataTypes } = require('sequelize');
+// models/HorasTrabajadas.js
 
+const { DataTypes } = require('sequelize');
+const sequelize = require('../database/db.js'); // Asegúrate que db.js haga module.exports = sequelize;
+
+// Definición del modelo
 const HoursWorking = sequelize.define('HorasTrabajadas', {
     id: {
         type: DataTypes.INTEGER,
@@ -12,7 +15,7 @@ const HoursWorking = sequelize.define('HorasTrabajadas', {
     },
     salida: {
         type: DataTypes.STRING,
-    }
-});
+    },
+}, { timestamps: false });
 
 module.exports = HoursWorking;

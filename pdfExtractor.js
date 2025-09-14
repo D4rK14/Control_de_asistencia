@@ -4,25 +4,12 @@
  * @returns {object} Un objeto con los datos extraídos de la licencia.
  */
 function extraerDatosLicencia(texto) {
-    /**
-     * Función de ayuda para buscar un valor que sigue a una etiqueta (case-insensitive).
-     * @param {string} txt - El texto completo del PDF.
-     * @param {string} etiqueta - La etiqueta a buscar (ej. "Nombre").
-     * @returns {string} El valor encontrado o "No encontrado".
-     */
     const getMatch = (txt, etiqueta) => {
         const regex = new RegExp(`${etiqueta}\\s*:*\\s*([^\\r\\n]+)`, "i");
         const match = txt.match(regex);
         return match && match[1] ? match[1].trim() : "No encontrado";
     };
 
-    /**
-     * Función de ayuda para extraer texto que se encuentra ENTRE dos etiquetas.
-     * @param {string} txt - El texto completo del PDF.
-     * @param {string} startTag - La etiqueta de inicio (ej. "Dirección Reposo").
-     * @param {string} endTag - La etiqueta de fin (ej. "Teléfono").
-     * @returns {string} El texto extraído o "No encontrado".
-     */
     const extractBetween = (txt, startTag, endTag) => {
         const regex = new RegExp(`${startTag}\\s*:*\\s*([\\s\\S]*?)\\s*${endTag}`, "i");
         const match = txt.match(regex);
@@ -30,13 +17,11 @@ function extraerDatosLicencia(texto) {
             return match[1].trim().replace(/[\r\\n]+/g, ' ').replace(/\s+/g, ' ');
         }
         return "No encontrado";
-    }
+    };
 
-    // --- MANEJO CORREGIDO PARA DIRECCIÓN Y TELÉFONO ---
     const direccion = extractBetween(texto, "Dirección Reposo", "Teléfono");
     const telefono = getMatch(texto, "Teléfono");
 
-    // --- CORRECCIÓN PARA EL CAMPO "PROFESIONAL" (Case-Sensitive) ---
     let profesional = "No encontrado";
     const profesionalRegex = /Profesional\s*:*\s*([^\r\n]+)/;
     const profesionalMatch = texto.match(profesionalRegex);
@@ -63,7 +48,4 @@ function extraerDatosLicencia(texto) {
     return datos;
 }
 
-// Exportamos la función para que pueda ser utilizada en otros archivos (como app.js)
-module.exports = {
-    extraerDatosLicencia
-};
+module.exports = { extraerDatosLicencia };
