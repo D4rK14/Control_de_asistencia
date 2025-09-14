@@ -9,12 +9,12 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 function generateAccessToken(user) {
-  return jwt.sign({ id: user.id, rut: user.rut }, JWT_SECRET, { expiresIn: "15m" });
-}
+  return jwt.sign({ id: user.id, rut: user.rut, nombre: user.nombre},JWT_SECRET, { expiresIn: "15m" });
+};
 
 function generateRefreshToken(user) {
   return jwt.sign({ id: user.id }, JWT_REFRESH_SECRET, { expiresIn: "7d" });
-}
+};
 
 // Renderizar login
 const renderLogin = (req, res) => {
