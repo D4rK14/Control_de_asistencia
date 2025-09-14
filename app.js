@@ -78,6 +78,7 @@ app.use('/', pdfRoutes);
 /**
  * Levantar servidor en el puerto definido
  */
+
 sequelize.sync().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor escuchando en http://localhost:${PORT}`);
