@@ -1,27 +1,21 @@
-const jwt = require("jsonwebtoken");
-
-const JWT_SECRET = process.env.JWT_SECRET;
+// controllers/userController.js
+// Controlador para manejar vistas del usuario
 
 // Página de inicio
 const renderHome = (req, res) => {
   res.render("home");
 };
 
-// Página de perfil (protegida con JWT)
-const renderProfile = (req, res) => {
-  const token = req.cookies.accessToken;
-
-  if (!token) return res.redirect("/login");
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.redirect("/login");
-
-    // Renderizamos la vista con los datos del usuario
-    res.render("common/dashboard_usuario", { rut: user.rut });
+// Dashboard del usuario (protegido con middleware JWT)
+const renderDashboard = (req, res) => {
+  // req.user viene del authMiddleware
+  res.render("common/dashboard_usuario", {
+    usuario: req.user,  // Puedes acceder con {{usuario.rut}}, {{usuario.nombre}} si lo incluyes en el token
+    asistencias: []     // Aquí puedes traer datos desde DB si lo deseas
   });
 };
 
 module.exports = {
   renderHome,
-  renderProfile
+  renderDashboard
 };
