@@ -15,7 +15,21 @@ function generateRefreshToken(user) {
 
 // Renderizar login
 const renderLogin = (req, res) => {
-  res.render("common/login", { error: null });
+  const token = req.cookies.accessToken;
+
+  if (token) {
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (!err) {
+        // Token válido, redirigir al dashboard
+        return res.redirect("/dashboard_usuario");
+      }
+      // Si hay un error (token inválido/expirado), mostrar login
+      res.render("common/login", { error: null });
+    });
+  } else {
+    // No hay token, mostrar login
+    res.render("common/login", { error: null });
+  }
 };
 
 // Procesar login
