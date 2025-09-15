@@ -1,7 +1,7 @@
 // routes/userRoutes.js
 const express = require("express");
 const { renderHome, renderDashboard } = require("../controllers/userController.js");
-const verifyToken = require("../middlewares/authMiddleware.js");
+const {verifyToken, authorizeRole} = require("../middlewares/authMiddleware.js");
 
 const router = express.Router();
 
@@ -9,6 +9,6 @@ const router = express.Router();
 router.get("/", renderHome);
 
 // Dashboard protegido con middleware
-router.get("/dashboard_usuario", verifyToken, renderDashboard);
+router.get("/dashboard_usuario", verifyToken, authorizeRole(["Marketing", "Finanzas", "Administrador"]), renderDashboard);
 
 module.exports = router;

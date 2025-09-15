@@ -1,12 +1,13 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const Rol = require("../models/Rol");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 function generateAccessToken(user) {
-  return jwt.sign({ id: user.id, rut: user.rut, nombre: user.nombre},JWT_SECRET, { expiresIn: "15m" });
+  return jwt.sign({ id: user.id, rut: user.rut, nombre: user.nombre, rol: user.rol.nombre},JWT_SECRET, { expiresIn: "15m" });
 };
 
 function generateRefreshToken(user) {
@@ -26,7 +27,7 @@ const login = async (req, res) => {
     console.log("Datos recibidos:", rut, password);
 
     try {
-        const user = await User.findOne({ where: { rut } });
+        const user = await User.findOne({ where: { rut }, include: [{ model: Rol, as: 'rol'}] });
         console.log("Usuario encontrado:", user);
 
         if (!user) {

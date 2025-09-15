@@ -24,4 +24,19 @@ function verifyToken(req, res, next) {
   });
 }
 
-module.exports = verifyToken;
+//Autorizar usuario por rol
+function authorizeRole(allowedRoles) {
+  // Si pasan un string, lo convertimos a array
+  if (typeof allowedRoles === "string") {
+    allowedRoles = [allowedRoles];
+  }
+
+  return (req, res, next) => {
+    if (!allowedRoles.includes(req.user.rol)) {
+      return res.status(403).send("No tienes permiso para acceder a esta sección");
+    }
+    next();
+  };
+}
+
+module.exports = {verifyToken, authorizeRole};
