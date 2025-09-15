@@ -2,7 +2,7 @@
 
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
-const { extraerDatosLicencia } = require("../pdfExtractor"); // tu función personalizada
+const { extraerDatosLicencia } = require("../public/js/pdfExtractor"); // tu función personalizada
 
 /**
  * Renderiza la vista para subir PDF
