@@ -11,7 +11,11 @@
           </p>
           <form action="/enviar_justificacion" method="POST" enctype="multipart/form-data">
             <div class="mb-3">
-              <label for="fecha" class="form-label"><strong>Fecha de la Inasistencia</strong></label>
+              <label for="fecha" class="form-label"><strong>Fecha Inicio</strong></label>
+              <input type="date" class="form-control" id="fecha" name="fecha" required>
+            </div>
+             <div class="mb-3">
+              <label for="fecha" class="form-label"><strong>Fecha Fin</strong></label>
               <input type="date" class="form-control" id="fecha" name="fecha" required>
             </div>
             <div class="mb-4">

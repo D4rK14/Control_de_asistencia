@@ -76,6 +76,14 @@ app.set('view engine', '.hbs');
 app.set('views', path.join(__dirname, 'views'));
 
 /**
+ * Rutas de la API
+ */
+app.get('/api/time', (req, res) => {
+    const serverTime = moment().tz('America/Santiago').format('YYYY-MM-DD HH:mm:ss');
+    res.json({ time: serverTime });
+});
+
+/**
  * Rutas principales
  */
 app.use('/', authRoutes);
