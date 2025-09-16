@@ -78,18 +78,19 @@ app.set('views', path.join(__dirname, 'views'));
 /**
  * Rutas de la API
  */
-app.get('/api/time', async (req, res) => {
+app.get('/api/time', (req, res) => {
     try {
-        const response = await fetch('http://worldtimeapi.org/api/timezone/America/Santiago');
-        const data = await response.json();
-        const time = data.datetime.split('T')[1].split('.')[0];
+        const time = moment().tz('America/Santiago').format('HH:mm:ss');
         res.json({ time });
     } catch (err) {
-        console.error('Error fetching Chile time:', err);
+        console.error('Error getting local Chile time:', err);
         res.status(500).json({ error: 'No se pudo obtener la hora de Chile' });
     }
 });
 
+app.get('/dashboard_error', (req, res) => {
+    res.render('common/dashboard_error');
+});
 
 /**
  * Rutas principales

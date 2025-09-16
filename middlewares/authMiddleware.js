@@ -33,7 +33,7 @@ function authorizeRole(allowedRoles) {
 
   return (req, res, next) => {
     if (!allowedRoles.includes(req.user.rol)) {
-      return res.status(403).send("No tienes permiso para acceder a esta sección");
+      return res.redirect("/dashboard_error");
     }
     next();
   };
