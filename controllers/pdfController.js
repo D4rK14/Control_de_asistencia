@@ -5,12 +5,18 @@ const pdfParse = require("pdf-parse");
 const { extraerDatosLicencia } = require("../public/js/pdfExtractor"); // tu función personalizada
 
 /**
- * Renderiza la vista para subir PDF
+ * Renderiza la vista para justificar inasistencia
  */
 const renderUpload = (req, res) => {
-  res.render("pdf/enviarLicencia");
+  res.render("justificaciones/inasistencia");
 };
 
+/**
+ * Renderiza la vista para subir licencia medica
+ */
+const renderPdfView = (req, res) => {
+  res.render("justificaciones/licencia_medica");
+};
 /**
  * Procesa el PDF subido y extrae los datos
  */
@@ -44,5 +50,6 @@ const procesarPDF = async (req, res) => {
 
 module.exports = {
   renderUpload,
+  renderPdfView,
   procesarPDF
 };
