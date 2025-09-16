@@ -1,24 +1,36 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-
-console.log(bcrypt.hashSync("123456", 10));
-
+const Rol = require("../models/Rol");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 function generateAccessToken(user) {
-  return jwt.sign({ id: user.id, rut: user.rut }, JWT_SECRET, { expiresIn: "15m" });
-}
+  return jwt.sign({ id: user.id, rut: user.rut, nombre: user.nombre, rol: user.rol.nombre},JWT_SECRET, { expiresIn: "15m" });
+};
 
 function generateRefreshToken(user) {
   return jwt.sign({ id: user.id }, JWT_REFRESH_SECRET, { expiresIn: "7d" });
-}
+};
 
 // Renderizar login
 const renderLogin = (req, res) => {
-  res.render("common/login", { error: null });
+  const token = req.cookies.accessToken;
+
+  if (token) {
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (!err) {
+        // Token válido, redirigir al dashboard
+        return res.redirect("/dashboard_usuario");
+      }
+      // Si hay un error (token inválido/expirado), mostrar login
+      res.render("common/login", { error: null });
+    });
+  } else {
+    // No hay token, mostrar login
+    res.render("common/login", { error: null });
+  }
 };
 
 // Procesar login
@@ -29,13 +41,18 @@ const login = async (req, res) => {
     console.log("Datos recibidos:", rut, password);
 
     try {
-        const user = await User.findOne({ where: { rut } });
+        const user = await User.findOne({ where: { rut }, include: [{ model: Rol, as: 'rol'}] });
         console.log("Usuario encontrado:", user);
 
-        if (!user || !bcrypt.compareSync(password, user.password)) {
-            console.log("Error: credenciales inválidas");
-            return res.status(401).render("common/login", { error: "RUT o contraseña inválidos" });
-    }
+        if (!user) {
+            console.log("Error: usuario no existe");
+            return res.status(401).render("common/login", { error: "Usuario no registrado" });
+        }
+
+        if (!bcrypt.compareSync(password, user.password)) {
+            console.log("Error: contraseña incorrecta");
+            return res.status(401).render("common/login", { error: "Contraseña incorrecta" });
+        }
 
     console.log("Login correcto, generando tokens...");
     const accessToken = generateAccessToken(user);

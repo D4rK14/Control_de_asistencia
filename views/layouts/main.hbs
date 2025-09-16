@@ -33,7 +33,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/login">Iniciar Sesión</a>
+                        <span class="navbar-text" id="server-time"></span>
                     </li>
                 </ul>
             </div>
@@ -42,5 +42,22 @@
     {{{body}}}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateServerTime() {
+            fetch('/api/time')
+                .then(response => response.json())
+                .then(data => {
+                    const timeElement = document.getElementById('server-time');
+                    if (timeElement) {
+                        timeElement.innerText = data.time;
+                    }
+                })
+                .catch(error => console.error('Error fetching server time:', error));
+        }
+
+        setInterval(updateServerTime, 1000);
+        updateServerTime(); // initial call
+    </script>
+    {{{_sections.scripts}}}
 </body>
 </html>

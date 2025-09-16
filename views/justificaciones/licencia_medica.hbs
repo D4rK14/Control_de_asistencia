@@ -1,0 +1,117 @@
+<div class="container mt-4">
+    <h2>Cargar Licencia Médica</h2>
+    <p class="text-muted">Sube el archivo PDF de tu licencia médica para extraer la información automáticamente.</p>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="form-licencia">
+                <div class="mb-3">
+                    <label for="archivo-licencia" class="form-label">Selecciona el archivo PDF:</label>
+                    <input class="form-control" type="file" id="archivo-licencia" accept=".pdf">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="spinner" class="text-center mt-4" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p>Extrayendo datos del PDF...</p>
+    </div>
+
+    <div id="resultados-licencia" class="mt-4" style="display: none;">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h2 class="text-center mb-3">Datos Extraídos</h2>
+                <p class="text-center text-muted mb-4">Información de la licencia médica</p>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><strong>Folio:</strong> <span id="folio" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Nombre:</strong> <span id="nombre" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>RUT:</strong> <span id="rut" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Edad:</strong> <span id="edad" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Sexo:</strong> <span id="sexo" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Tipo de Licencia:</strong> <span id="tipoLicencia" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Fecha de Emisión:</strong> <span id="fechaEmision" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Inicio de Reposo:</strong> <span id="inicioReposo" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Fecha de Término:</strong> <span id="fechaTermino" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>N° de días:</strong> <span id="dias" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Profesional:</strong> <span id="profesional" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Teléfono:</strong> <span id="telefono" class="float-end"></span></li>
+                            <li class="list-group-item"><strong>Dirección Reposo:</strong> <span id="direccion" class="float-end"></span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-3 text-center">
+                    <button class="btn btn-primary">Enviar Justificación</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{#section 'scripts'}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
+    </script>
+    <script src="/js/pdfExtractor.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputLicencia = document.getElementById('archivo-licencia');
+            const resultadosDiv = document.getElementById('resultados-licencia');
+            const spinner = document.getElementById('spinner');
+
+            inputLicencia.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file && file.type === 'application/pdf') {
+                    resultadosDiv.style.display = 'none';
+                    spinner.style.display = 'block';
+
+                    try {
+                        const fileReader = new FileReader();
+                        fileReader.onload = async function() {
+                            const typedarray = new Uint8Array(this.result);
+                            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                            let textoCompleto = '';
+
+                            for (let i = 1; i <= pdf.numPages; i++) {
+                                const page = await pdf.getPage(i);
+                                const textContent = await page.getTextContent();
+                                const pageText = textContent.items.map(item => item.str).join(' ');
+                                textoCompleto += pageText + '\\n';
+                            }
+
+                            // Usamos la función de pdfExtractor.js
+                            const datos = extraerDatosLicencia(textoCompleto);
+                            
+                            document.getElementById('folio').textContent = datos.folio;
+                            document.getElementById('nombre').textContent = datos.nombre;
+                            document.getElementById('rut').textContent = datos.rut;
+                            document.getElementById('edad').textContent = datos.edad;
+                            document.getElementById('sexo').textContent = datos.sexo;
+                            document.getElementById('tipoLicencia').textContent = datos.tipoLicencia;
+                            document.getElementById('fechaEmision').textContent = datos.fechaEmision;
+                            document.getElementById('inicioReposo').textContent = datos.inicioReposo;
+                            document.getElementById('fechaTermino').textContent = datos.fechaTermino;
+                            document.getElementById('dias').textContent = datos.dias;
+                            document.getElementById('profesional').textContent = datos.profesional;
+                            document.getElementById('telefono').textContent = datos.telefono;
+                            document.getElementById('direccion').textContent = datos.direccion;
+
+                            spinner.style.display = 'none';
+                            resultadosDiv.style.display = 'block';
+                        };
+                        fileReader.readAsArrayBuffer(file);
+                    } catch (error) {
+                        console.error('Error al procesar el PDF:', error);
+                        spinner.style.display = 'none';
+                        alert('Hubo un error al procesar el archivo PDF. Asegúrate de que sea un archivo válido.');
+                    }
+                }
+            });
+        });
+    </script>
+{{/section}}

@@ -62,11 +62,26 @@ app.engine('.hbs', engine({
     extname: '.hbs',
     defaultLayout: 'main',
     layoutsDir: path.join(__dirname, 'views/layouts'),
-    partialsDir: path.join(__dirname, 'views/partials')
+    partialsDir: path.join(__dirname, 'views/partials'),
+    helpers: {
+        section: function(name, options) {
+            if (!this._sections) this._sections = {};
+            this._sections[name] = options.fn(this);
+            return null;
+        }
+    }
 }));
 
 app.set('view engine', '.hbs');
 app.set('views', path.join(__dirname, 'views'));
+
+/**
+ * Rutas de la API
+ */
+app.get('/api/time', (req, res) => {
+    const serverTime = moment().tz('America/Santiago').format('YYYY-MM-DD HH:mm:ss');
+    res.json({ time: serverTime });
+});
 
 /**
  * Rutas principales
@@ -78,6 +93,7 @@ app.use('/', pdfRoutes);
 /**
  * Levantar servidor en el puerto definido
  */
+
 sequelize.sync().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor escuchando en http://localhost:${PORT}`);
