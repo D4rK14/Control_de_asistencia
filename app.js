@@ -22,6 +22,7 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const pdfRoutes = require('./routes/pdfRoutes');
+const asistenciaRoutes = require('./routes/assistRoutes'); // ✅ agregado
 
 // Inicialización de la aplicación
 const app = express();
@@ -98,11 +99,18 @@ app.get('/dashboard_error', (req, res) => {
 app.use('/', authRoutes);
 app.use('/', userRoutes);
 app.use('/', pdfRoutes);
+app.use('/', asistenciaRoutes); // ✅ agregado para /asistencia
+
+/**
+ * Middleware 404
+ */
+app.use((req, res) => {
+    res.status(404).send('Ruta no encontrada');
+});
 
 /**
  * Levantar servidor en el puerto definido
  */
-
 sequelize.sync().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor escuchando en http://localhost:${PORT}`);
