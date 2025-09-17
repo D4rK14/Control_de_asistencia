@@ -7,7 +7,7 @@ const CategoriaAsistencia = require('../models/assistCategory');
 exports.registrarAsistencia = async (req, res) => {
   try {
     const { tipo } = req.body; // entrada o salida
-    const id_usuario = req.session.userId; // suponiendo que guardaste el id del usuario en la sesión
+    const id_usuario = req.user?.id; // suponiendo que guardaste el id del usuario en la sesión
     const hoy = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
     // Buscar si ya existe registro de asistencia para hoy
@@ -55,7 +55,7 @@ exports.registrarAsistencia = async (req, res) => {
 // Obtener todas las asistencias de un usuario (para reportes personales)
 exports.misAsistencias = async (req, res) => {
   try {
-    const id_usuario = req.session.userId;
+    const id_usuario = req.user?.id;
 
     const asistencias = await Asistencia.findAll({
       where: { id_usuario },
