@@ -1,8 +1,9 @@
+// Modelo de licencia medica
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
-const User = require("../models/User");
+const User = require("./User");
 
-const LicenciaMedica = sequelize.define('licencia medica', {
+const LicenciaMedica = sequelize.define('licencia_medica', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,

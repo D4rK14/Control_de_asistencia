@@ -3,7 +3,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database.js'); // Asegúrate que database.js exporte `module.exports = sequelize;`
 
 // Definición del modelo
-const StateAssisting = sequelize.define('EstadoAsistencia', {
+const EstadoAsistencia = sequelize.define('EstadoAsistencia', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -17,4 +17,4 @@ const StateAssisting = sequelize.define('EstadoAsistencia', {
     },
 }, { timestamps: false });
 
-module.exports = StateAssisting;
+module.exports = EstadoAsistencia;
