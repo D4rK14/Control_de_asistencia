@@ -15,7 +15,7 @@ const asistencia = sequelize.define('asistencia', {
         type: DataTypes.INTEGER
     },
     fecha:{
-        type: DataTypes.DATE
+        type: DataTypes.DATEONLY
     },
     hora_entrada:{
         type: DataTypes.TIME
@@ -31,13 +31,13 @@ const asistencia = sequelize.define('asistencia', {
     }
 }, { timestamps: false });
 
-asistencia.belongsTo(User, {foreignKey: 'id_usuario', as:'asistencias'});
-User.hasMany(asistencia, {foreignKey:'id_usuario', as:'usuario'});
+asistencia.belongsTo(User, {foreignKey: 'id_usuario', as:'usuario'});
+User.hasMany(asistencia, {foreignKey:'id_usuario', as:'asistencias'});
 
-asistencia.belongsTo(EstadoAsistencia, {foreignKey: 'id_estado', as:'asistencia'});
-EstadoAsistencia.hasMany(asistencia, {foreignKey: 'id_estado', as:'usuarios'});
+asistencia.belongsTo(EstadoAsistencia, {foreignKey: 'id_estado', as:'estado'});
+EstadoAsistencia.hasMany(asistencia, {foreignKey: 'id_estado', as:'asistencias'});
 
-asistencia.belongsTo(CategoriaAsistencia, {foreignKey: 'id_categoria', as:'assist'});
-CategoriaAsistencia.hasMany(asistencia, {foreignKey: 'id_categoria', as:'users'})
+asistencia.belongsTo(CategoriaAsistencia, {foreignKey: 'id_categoria', as:'categoria'});
+CategoriaAsistencia.hasMany(asistencia, {foreignKey: 'id_categoria', as:'assist'})
 
 module.exports = asistencia;
