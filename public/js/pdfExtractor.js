@@ -1,3 +1,13 @@
+// Archivo: public/js/pdfExtractor.js
+// Configuración del worker de PDF.js. Apunta a la URL del CDN para pdf.worker.min.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js";
+
+/**
+ * @function extraerDatosLicencia
+ * @description Extrae datos específicos de una licencia médica chilena a partir de un texto plano extraído de un PDF.
+ * @param {string} textoRaw - El texto completo extraído del PDF de la licencia médica.
+ * @returns {Object} Un objeto con los datos de la licencia médica (folio, nombre, rut, etc.).
+ */
 function extraerDatosLicencia(textoRaw) {
   // --- 1) Normalización suave del texto ---
   let texto = (textoRaw || '')
@@ -121,3 +131,61 @@ function extraerDatosLicencia(textoRaw) {
 
   return datos;
 }
+
+// Lógica para manejar la carga y extracción del PDF en la vista de licencia médica.
+document.addEventListener('DOMContentLoaded', () => {
+    const inputLicencia = document.getElementById('archivo-licencia');
+    const resultadosDiv = document.getElementById('resultados-licencia');
+    const spinner = document.getElementById('spinner');
+
+    if (inputLicencia) { // Solo ejecutar si el input existe en la página actual
+        inputLicencia.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                resultadosDiv.style.display = 'none';
+                spinner.style.display = 'block';
+
+                try {
+                    const fileReader = new FileReader();
+                    fileReader.onload = async function() {
+                        const typedarray = new Uint8Array(this.result);
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let textoCompleto = '';
+
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            const pageText = textContent.items.map(item => item.str).join(' ');
+                            textoCompleto += pageText + '\n';
+                        }
+
+                        // Usamos la función de pdfExtractor.js
+                        const datos = extraerDatosLicencia(textoCompleto);
+                        
+                        document.getElementById('folio').textContent = datos.folio;
+                        document.getElementById('nombre').textContent = datos.nombre;
+                        document.getElementById('rut').textContent = datos.rut;
+                        document.getElementById('edad').textContent = datos.edad;
+                        document.getElementById('sexo').textContent = datos.sexo;
+                        document.getElementById('tipoLicencia').textContent = datos.tipoLicencia;
+                        document.getElementById('fechaEmision').textContent = datos.fechaEmision;
+                        document.getElementById('inicioReposo').textContent = datos.inicioReposo;
+                        document.getElementById('fechaTermino').textContent = datos.fechaTermino;
+                        document.getElementById('dias').textContent = datos.dias;
+                        document.getElementById('profesional').textContent = datos.profesional;
+                        document.getElementById('telefono').textContent = datos.telefono;
+                        document.getElementById('direccion').textContent = datos.direccion;
+
+                        spinner.style.display = 'none';
+                        resultadosDiv.style.display = 'block';
+                    };
+                    fileReader.readAsArrayBuffer(file);
+                } catch (error) {
+                    console.error('Error al procesar el PDF:', error);
+                    spinner.style.display = 'none';
+                    alert('Hubo un error al procesar el archivo PDF. Asegúrate de que sea un archivo válido.');
+                }
+            }
+        });
+    }
+});

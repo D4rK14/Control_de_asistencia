@@ -9,6 +9,9 @@
                     <label for="archivo-licencia" class="form-label">Selecciona el archivo PDF:</label>
                     <input class="form-control" type="file" id="archivo-licencia" accept=".pdf">
                 </div>
+                <div class="mt-3">
+                    <a href="/dashboard_usuario" class="btn btn-secondary me-2"><i class="fa-solid fa-arrow-left me-2"></i>Volver</a>
+                </div>
             </form>
         </div>
     </div>
@@ -54,64 +57,6 @@
 
 {{#section 'scripts'}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js`;
-    </script>
+    {{!-- pdfjsLib.GlobalWorkerOptions.workerSrc y la lógica de extracción ahora están en pdfExtractor.js --}}
     <script src="/js/pdfExtractor.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const inputLicencia = document.getElementById('archivo-licencia');
-            const resultadosDiv = document.getElementById('resultados-licencia');
-            const spinner = document.getElementById('spinner');
-
-            inputLicencia.addEventListener('change', async (event) => {
-                const file = event.target.files[0];
-                if (file && file.type === 'application/pdf') {
-                    resultadosDiv.style.display = 'none';
-                    spinner.style.display = 'block';
-
-                    try {
-                        const fileReader = new FileReader();
-                        fileReader.onload = async function() {
-                            const typedarray = new Uint8Array(this.result);
-                            const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                            let textoCompleto = '';
-
-                            for (let i = 1; i <= pdf.numPages; i++) {
-                                const page = await pdf.getPage(i);
-                                const textContent = await page.getTextContent();
-                                const pageText = textContent.items.map(item => item.str).join(' ');
-                                textoCompleto += pageText + '\\n';
-                            }
-
-                            // Usamos la función de pdfExtractor.js
-                            const datos = extraerDatosLicencia(textoCompleto);
-                            
-                            document.getElementById('folio').textContent = datos.folio;
-                            document.getElementById('nombre').textContent = datos.nombre;
-                            document.getElementById('rut').textContent = datos.rut;
-                            document.getElementById('edad').textContent = datos.edad;
-                            document.getElementById('sexo').textContent = datos.sexo;
-                            document.getElementById('tipoLicencia').textContent = datos.tipoLicencia;
-                            document.getElementById('fechaEmision').textContent = datos.fechaEmision;
-                            document.getElementById('inicioReposo').textContent = datos.inicioReposo;
-                            document.getElementById('fechaTermino').textContent = datos.fechaTermino;
-                            document.getElementById('dias').textContent = datos.dias;
-                            document.getElementById('profesional').textContent = datos.profesional;
-                            document.getElementById('telefono').textContent = datos.telefono;
-                            document.getElementById('direccion').textContent = datos.direccion;
-
-                            spinner.style.display = 'none';
-                            resultadosDiv.style.display = 'block';
-                        };
-                        fileReader.readAsArrayBuffer(file);
-                    } catch (error) {
-                        console.error('Error al procesar el PDF:', error);
-                        spinner.style.display = 'none';
-                        alert('Hubo un error al procesar el archivo PDF. Asegúrate de que sea un archivo válido.');
-                    }
-                }
-            });
-        });
-    </script>
 {{/section}}
