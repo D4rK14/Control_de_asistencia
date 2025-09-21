@@ -5,7 +5,7 @@
  * Este módulo utiliza `userController` para las operaciones de vista y `authMiddleware` para proteger las rutas.
  */
 const express = require("express"); // Importa el framework Express para crear y gestionar rutas.
-const { renderHome, renderUserDashboard, renderAdminDashboard } = require("../controllers/userController.js"); // Importa las funciones del controlador de usuarios.
+const { renderHome, renderUserDashboard, renderAdminDashboard, renderUserReports } = require("../controllers/userController.js"); // Importa las funciones del controlador de usuarios.
 const {verifyToken, authorizeRole} = require("../middlewares/authMiddleware.js"); // Importa los middlewares de autenticación y autorización.
 
 const router = express.Router(); // Crea una nueva instancia de un router de Express.
@@ -50,6 +50,16 @@ router.get("/dashboard", verifyToken, (req, res) => {
  * La vista es renderizada por `userController.renderDashboard`.
  */
 router.get("/dashboard_usuario", verifyToken, authorizeRole(["Marketing", "Finanzas", "Administrador"]), renderUserDashboard);
+
+/**
+ * @route GET /reportes_usuario
+ * @description Muestra la vista dedicada de reportes personales para un usuario autenticado.
+ * Esta ruta está protegida por dos middlewares:
+ * - `verifyToken`: Asegura que solo usuarios con un token JWT válido puedan acceder.
+ * - `authorizeRole`: Restringe el acceso solo a usuarios con roles específicos (Marketing, Finanzas, Administrador).
+ * La vista es renderizada por `userController.renderUserReports`.
+ */
+router.get("/reportes_usuario", verifyToken, authorizeRole(["Marketing", "Finanzas", "Administrador"]), renderUserReports);
 
 // Exporta el router para que pueda ser utilizado por la aplicación principal (app.js).
 module.exports = router;

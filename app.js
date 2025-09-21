@@ -78,6 +78,21 @@ app.engine('.hbs', engine({
             if (!this._sections) this._sections = {};
             this._sections[name] = options.fn(this);
             return null;
+        },
+        // Helper para comparar igualdad
+        eq: function(a, b) {
+            return a === b;
+        },
+        // Helper para obtener clase CSS del badge según categoría
+        badgeClass: function(categoriaNombre) {
+            switch(categoriaNombre) {
+                case 'Entrada Normal': return 'bg-success';
+                case 'Salida Normal': return 'bg-primary';
+                case 'Salida Anticipada': return 'bg-warning';
+                case 'Atraso': return 'bg-danger';
+                case 'Inasistencia': return 'bg-dark';
+                default: return 'bg-secondary';
+            }
         }
     }
 }));

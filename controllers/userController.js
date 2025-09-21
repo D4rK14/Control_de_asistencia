@@ -28,24 +28,18 @@ const renderHome = (req, res) => {
  * antes de mostrar la vista. Los datos del usuario (`req.user`) son provistos por el middleware de autenticación.
  * @param {Object} req - Objeto de solicitud de Express (espera `req.user` con datos del usuario).
  * @param {Object} res - Objeto de respuesta de Express.
- * @returns {Promise<void>} Renderiza la plantilla `common/dashboard_usuario.hbs` con los datos del usuario y sus asistencias,
+ * @returns {Promise<void>} Renderiza la plantilla `common/dashboard_usuario.hbs` con los datos del usuario,
  * o una página de error si falla la carga de datos.
  */
 const renderUserDashboard = async (req, res) => {
   // `req.user` contiene la información del usuario autenticado, gracias al middleware `authMiddleware.js`.
   try {
-    const id_usuario = req.user.id; // Extrae el ID del usuario del objeto `req.user`.
-    // Llama a la función `getMisAsistenciasByUserId` para obtener todas las asistencias de este usuario.
-    const asistencias = await getMisAsistenciasByUserId(id_usuario);
-
     // Renderiza la vista del dashboard, pasando el objeto `usuario` (con datos de `req.user`)
-    // y el arreglo de `asistencias` obtenido de la base de datos.
     res.render("common/dashboard_usuario", {
-      usuario: { ...req.user, isAdmin: req.user.rol === 'Administrador' },  // Objeto de usuario para acceder a propiedades como {{usuario.rut}}, {{usuario.nombre}}
-      asistencias: asistencias // Arreglo de asistencias del usuario para mostrar en la tabla de reportes.
+      usuario: { ...req.user, isAdmin: req.user.rol === 'Administrador' }
     });
   } catch (error) {
-    // Si ocurre un error durante la obtención de asistencias o el renderizado,
+    // Si ocurre un error durante el renderizado,
     // se registra el error y se muestra una página de error al usuario.
     console.error("Error al renderizar el dashboard del usuario:", error);
     res.status(500).render("common/dashboard_error", { message: "Error al cargar el dashboard." });
@@ -91,9 +85,39 @@ const renderAdminDashboard = async (req, res) => {
   }
 };
 
+/**
+ * @function renderUserReports
+ * @description Renderiza la vista de reportes personales para un usuario autenticado.
+ * Esta función está protegida por middleware JWT y carga los datos de asistencia del usuario
+ * para mostrarlos en una vista dedicada.
+ * @param {Object} req - Objeto de solicitud de Express (espera `req.user` con datos del usuario).
+ * @param {Object} res - Objeto de respuesta de Express.
+ * @returns {Promise<void>} Renderiza la plantilla `common/reportes_usuario.hbs` con los datos del usuario y sus asistencias,
+ * o una página de error si falla la carga de datos.
+ */
+const renderUserReports = async (req, res) => {
+  try {
+    const id_usuario = req.user.id; // Extrae el ID del usuario del objeto `req.user`.
+    // Llama a la función `getMisAsistenciasByUserId` para obtener todas las asistencias de este usuario.
+    const asistencias = await getMisAsistenciasByUserId(id_usuario);
+
+    // Renderiza la vista de reportes, pasando el objeto `usuario` y el arreglo de `asistencias`.
+    res.render("common/reportes_usuario", {
+      usuario: { ...req.user, isAdmin: req.user.rol === 'Administrador' },
+      asistencias: asistencias
+    });
+  } catch (error) {
+    // Si ocurre un error durante la obtención de asistencias o el renderizado,
+    // se registra el error y se muestra una página de error al usuario.
+    console.error("Error al renderizar los reportes del usuario:", error);
+    res.status(500).render("common/dashboard_error", { message: "Error al cargar los reportes." });
+  }
+};
+
 // Exporta las funciones del controlador para que puedan ser utilizadas por los routers de Express.
 module.exports = {
   renderHome,
   renderUserDashboard,
-  renderAdminDashboard
+  renderAdminDashboard,
+  renderUserReports
 };
