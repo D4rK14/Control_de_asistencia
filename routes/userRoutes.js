@@ -1,14 +1,55 @@
-// routes/userRoutes.js
-const express = require("express");
-const { renderHome, renderDashboard } = require("../controllers/userController.js");
-const verifyToken = require("../middlewares/authMiddleware.js");
+// Archivo: routes/userRoutes.js
+/**
+ * @file userRoutes.js
+ * @description Define las rutas de la API relacionadas con la gestión de usuarios y la visualización de su dashboard.
+ * Este módulo utiliza `userController` para las operaciones de vista y `authMiddleware` para proteger las rutas.
+ */
+const express = require("express"); // Importa el framework Express para crear y gestionar rutas.
+const { renderHome, renderUserDashboard, renderAdminDashboard } = require("../controllers/userController.js"); // Importa las funciones del controlador de usuarios.
+const {verifyToken, authorizeRole} = require("../middlewares/authMiddleware.js"); // Importa los middlewares de autenticación y autorización.
 
-const router = express.Router();
+const router = express.Router(); // Crea una nueva instancia de un router de Express.
 
-// Página principal
+/**
+ * @section Rutas de Acceso General
+ */
+
+/**
+ * @route GET /
+ * @description Ruta principal de la aplicación. Muestra la página de inicio (home).
+ */
 router.get("/", renderHome);
 
-// Dashboard protegido con middleware
-router.get("/dashboard_usuario", verifyToken, renderDashboard);
+/**
+ * @route GET /dashboard
+ * @description Redirige al usuario al dashboard correcto según su rol.
+ * Utiliza `verifyToken` para asegurar que el usuario esté autenticado y luego
+ * decide si enviarlo al dashboard de usuario (`/dashboard_usuario`) o al de administrador (`/admin`).
+ */
+router.get("/dashboard", verifyToken, (req, res) => {
+    if (req.user && req.user.rol === 'Administrador') {
+        res.redirect('/admin');
+    } else if (req.user) {
+        res.redirect('/dashboard_usuario');
+    } else {
+        // Si por alguna razón no hay usuario (ej. token inválido aunque verifyToken debería manejarlo)
+        res.redirect('/login');
+    }
+});
 
+/**
+ * @section Rutas de Dashboard de Usuario
+ */
+
+/**
+ * @route GET /dashboard_usuario
+ * @description Muestra el dashboard personalizado para un usuario autenticado.
+ * Esta ruta está protegida por dos middlewares:
+ * - `verifyToken`: Asegura que solo usuarios con un token JWT válido puedan acceder.
+ * - `authorizeRole`: Restringe el acceso solo a usuarios con roles específicos (Marketing, Finanzas, Administrador).
+ * La vista es renderizada por `userController.renderDashboard`.
+ */
+router.get("/dashboard_usuario", verifyToken, authorizeRole(["Marketing", "Finanzas", "Administrador"]), renderUserDashboard);
+
+// Exporta el router para que pueda ser utilizado por la aplicación principal (app.js).
 module.exports = router;
