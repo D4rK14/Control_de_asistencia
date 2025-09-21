@@ -32,7 +32,7 @@ const Justificacion = sequelize.define('justificacion_comun', {
         allowNull: false // No permite valores nulos.
     },
     // Fecha de inicio del período que la justificación cubre.
-    fech-inicio: {
+    fecha_inicio: {
         type: DataTypes.DATE,
         allowNull: false // No permite valores nulos.
     },

@@ -5,6 +5,7 @@
     <div class="card">
         <div class="card-body">
             <form id="form-licencia">
+                <input type="hidden" id="id-usuario" name="id_usuario" value="{{usuario.id}}">
                 <div class="mb-3">
                     <label for="archivo-licencia" class="form-label">Selecciona el archivo PDF:</label>
                     <input class="form-control" type="file" id="archivo-licencia" accept=".pdf">
@@ -48,7 +49,7 @@
                     </div>
                 </div>
                 <div class="mt-3 text-center">
-                    <button class="btn btn-primary">Enviar Justificación</button>
+                    <button type="button" id="enviar-licencia-btn" class="btn btn-primary">Enviar Justificación</button>
                 </div>
             </div>
         </div>
@@ -59,4 +60,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     {{!-- pdfjsLib.GlobalWorkerOptions.workerSrc y la lógica de extracción ahora están en pdfExtractor.js --}}
     <script src="/js/pdfExtractor.js"></script>
+    <script src="/js/licenseFrontend.js"></script>
 {{/section}}

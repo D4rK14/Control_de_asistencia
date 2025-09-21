@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const asistenciaForm = document.getElementById('asistenciaForm');
   const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
   const notificationModalBody = document.getElementById('notificationModalBody');
-  const usuarioId = '{{usuario.id}}'; // Obtener el ID del usuario de Handlebars
+  const usuarioId = window.usuarioId; // Obtener el ID del usuario de la variable global
 
   if (asistenciaForm) {
     asistenciaForm.addEventListener('submit', async (event) => {
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         row.insertCell().textContent = asistencia.fecha;
         row.insertCell().textContent = asistencia.hora_entrada;
         row.insertCell().textContent = asistencia.hora_salida || '-';
-        row.insertCell().textContent = asistencia.estado ? asistencia.estado.nombre : '-';
+        row.insertCell().textContent = asistencia.tipo_asistencia || '-'; // Usar el alias tipo_asistencia
         const justificacionCell = row.insertCell();
         if (asistencia.documento) {
           justificacionCell.innerHTML = `<a href="${asistencia.documento}" target="_blank">Ver</a>`;

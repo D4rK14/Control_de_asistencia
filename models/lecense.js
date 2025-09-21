@@ -33,12 +33,12 @@ const LicenciaMedica = sequelize.define('licencia_medica', {
         unique: true // Asegura que no haya folios duplicados.
     },
     // Fecha de emisión de la licencia médica.
-    fecha_emicion: {
+    fecha_emision: {
         type: DataTypes.DATEONLY,
         allowNull: false // No permite valores nulos.
     },
     // Fecha de inicio del período de reposo de la licencia.
-    fech-inicio: {
+    fecha_inicio: {
         type: DataTypes.DATEONLY,
         allowNull: false // No permite valores nulos.
     },
@@ -57,8 +57,38 @@ const LicenciaMedica = sequelize.define('licencia_medica', {
         type: DataTypes.STRING,
         allowNull: true // Permite valores nulos, podría no ser siempre explícito o completo.
     },
-    // Nombre del médico tratante que emitió la licencia.
-    medico_tratante:{
+    // Nombre del profesional de la salud que emitió la licencia.
+    profesional:{
+        type: DataTypes.STRING,
+        allowNull: true // Permite valores nulos.
+    },
+    // Nombre del trabajador extraído del PDF.
+    nombre_trabajador: {
+        type: DataTypes.STRING,
+        allowNull: true // Permite valores nulos.
+    },
+    // RUT del trabajador extraído del PDF.
+    rut_trabajador: {
+        type: DataTypes.STRING,
+        allowNull: true // Permite valores nulos.
+    },
+    // Edad del trabajador extraída del PDF.
+    edad_trabajador: {
+        type: DataTypes.INTEGER,
+        allowNull: true // Permite valores nulos.
+    },
+    // Sexo del trabajador extraído del PDF.
+    sexo_trabajador: {
+        type: DataTypes.STRING,
+        allowNull: true // Permite valores nulos.
+    },
+    // Dirección de reposo extraída del PDF.
+    direccion_reposo: {
+        type: DataTypes.STRING,
+        allowNull: true // Permite valores nulos.
+    },
+    // Teléfono del trabajador o contacto extraído del PDF.
+    telefono_contacto: {
         type: DataTypes.STRING,
         allowNull: true // Permite valores nulos.
     },

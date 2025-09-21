@@ -100,7 +100,18 @@ const misAsistencias = async (req, res) => {
       raw: true // Devuelve objetos planos de JavaScript para facilitar su uso en las vistas.
     });
 
-    res.json(asistencias); // Envía las asistencias encontradas como respuesta JSON.
+    console.log('Asistencias obtenidas de Sequelize:', asistencias); // Debugging
+
+    // Mapear los resultados para ajustar el formato al esperado por el frontend
+    const asistenciasFormateadas = asistencias.map(asistencia => ({
+      fecha: asistencia.fecha,
+      hora_entrada: asistencia.hora_entrada,
+      hora_salida: asistencia.hora_salida || '-',
+      tipo_asistencia: asistencia['estado.estado'] || '-', // Usar 'estado.estado' directamente de los resultados raw
+      documento: asistencia.documento || '-' // Asegurarse de que el documento esté presente o sea '-' si no existe
+    }));
+
+    res.json(asistenciasFormateadas); // Envía las asistencias encontradas como respuesta JSON.
 
   } catch (error) {
     console.error('Error al obtener asistencias:', error); // Registra el error en la consola del servidor.

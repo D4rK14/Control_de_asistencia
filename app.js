@@ -20,6 +20,7 @@ const userRoutes = require('./routes/userRoutes'); // Rutas para funcionalidades
 const pdfRoutes = require('./routes/pdfRoutes');   // Rutas para funcionalidades relacionadas con PDFs
 const asistenciaRoutes = require('./routes/assistRoutes'); // Rutas para el registro y consulta de asistencia
 const adminRoutes = require('./routes/adminRoutes'); // Rutas para la administración de usuarios (CRUD)
+const licenseRoutes = require('./routes/licenseRoutes'); // Rutas para la gestión de licencias médicas
 
 // Inicialización de la aplicación Express
 const app = express();
@@ -113,6 +114,7 @@ app.use('/', userRoutes); // Usa las rutas de usuario
 app.use('/', pdfRoutes);  // Usa las rutas de PDF
 app.use('/', asistenciaRoutes); // Usa las rutas de asistencia
 app.use('/', adminRoutes); // Usa las rutas de administración de usuarios
+app.use('/api', licenseRoutes); // Usa las rutas de licencias médicas con prefijo /api
 
 /**
  * Middleware para manejar rutas no encontradas (404)

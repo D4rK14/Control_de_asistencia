@@ -32,6 +32,7 @@
     "multer": "^2.0.2",
     "mysql2": "^3.14.3",
     "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^5.4.149",
     "sequelize": "^6.37.7"
   }
 }
