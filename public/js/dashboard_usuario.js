@@ -2,14 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const asistenciaForm = document.getElementById('asistenciaForm');
   const notificationModal = new bootstrap.Modal(document.getElementById('notificationModal'));
   const notificationModalBody = document.getElementById('notificationModalBody');
-  const usuarioId = '{{usuario.id}}'; // Obtener el ID del usuario de Handlebars
 
   if (asistenciaForm) {
     asistenciaForm.addEventListener('submit', async (event) => {
-      event.preventDefault(); // Prevenir el envío por defecto del formulario
+      event.preventDefault();
 
-      const formData = new FormData(asistenciaForm);
-      const tipo = event.submitter.value; // Obtener el valor del botón presionado (entrada/salida)
+      const tipo = event.submitter.value;
 
       try {
         const response = await fetch(`/asistencia/${usuarioId}`, {
@@ -17,14 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ tipo: tipo }),
+          body: JSON.stringify({ tipo }),
         });
 
         const data = await response.json();
 
         if (response.ok) {
           notificationModalBody.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
-          // Recargar la tabla de asistencias
           cargarMisAsistencias(usuarioId);
         } else {
           notificationModalBody.innerHTML = `<div class="alert alert-danger">${data.error || 'Error al registrar asistencia.'}</div>`;
@@ -38,13 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Función para cargar las asistencias del usuario
+  // Cargar asistencias del usuario
   async function cargarMisAsistencias(id) {
     try {
       const response = await fetch(`/asistencia/mis-asistencias/${id}`);
       const asistencias = await response.json();
       const tableBody = document.querySelector('#asistenciasTable tbody');
-      tableBody.innerHTML = ''; // Limpiar tabla actual
+      tableBody.innerHTML = '';
 
       asistencias.forEach(asistencia => {
         const row = tableBody.insertRow();
@@ -66,6 +63,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Cargar asistencias al iniciar la página
   cargarMisAsistencias(usuarioId);
 });
