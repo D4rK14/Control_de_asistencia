@@ -180,6 +180,11 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     const { id } = req.params;
     try {
+        // Verificar que el usuario no esté intentando eliminarse a sí mismo
+        if (req.user && parseInt(id) === req.user.id) {
+            return res.status(403).json({ error: 'No puedes eliminar tu propia cuenta de usuario.' });
+        }
+
         const user = await User.findByPk(id);
         if (!user) {
             return res.status(404).json({ error: 'Usuario no encontrado.' });
@@ -193,6 +198,41 @@ const deleteUser = async (req, res) => {
     }
 };
 
+/**
+ * @function changePassword
+ * @description Cambia la contraseña de un usuario existente, verificando primero la contraseña antigua.
+ * Requiere el ID del usuario en los parámetros de la URL y oldPassword, newPassword en el cuerpo.
+ * @param {Object} req - Objeto de solicitud de Express. Espera `id` en `req.params` y `oldPassword`, `newPassword` en `req.body`.
+ * @param {Object} res - Objeto de respuesta de Express.
+ * @returns {Promise<void>} Envía una respuesta JSON indicando el éxito o el fracaso del cambio de contraseña.
+ */
+const changePassword = async (req, res) => {
+    const { id } = req.params;
+    const { oldPassword, newPassword } = req.body;
+    try {
+        const user = await User.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+
+        // Verificar la contraseña antigua
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'La contraseña antigua es incorrecta.' });
+        }
+
+        // Encriptar la nueva contraseña
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedNewPassword;
+        await user.save();
+
+        res.json({ message: 'Contraseña cambiada con éxito.' });
+    } catch (error) {
+        console.error("Error al cambiar contraseña:", error);
+        res.status(500).json({ error: 'Error al cambiar la contraseña.', details: error.message });
+    }
+};
+
 // Exporta todas las funciones del controlador para que puedan ser utilizadas por las rutas de Express.
 module.exports = {
     renderAdminUserDashboard,
@@ -201,5 +241,6 @@ module.exports = {
     createUser,
     updateUser,
     deleteUser,
+    changePassword,
     _fetchUsersAndRolesData // Exporta la función interna para que otros controladores puedan usarla.
 };

@@ -68,7 +68,12 @@
                     </div>
                     <div class="mb-3">
                         <label for="createPassword" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control" id="createPassword" name="password" required>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="createPassword" name="password" required>
+                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="createPassword">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="createRol" class="form-label">Rol</label>
@@ -111,16 +116,60 @@
                         <input type="email" class="form-control" id="editCorreo" name="correo">
                     </div>
                     <div class="mb-3">
-                        <label for="editPassword" class="form-label">Nueva Contraseña (dejar vacío para no cambiar)</label>
-                        <input type="password" class="form-control" id="editPassword" name="password">
-                    </div>
-                    <div class="mb-3">
                         <label for="editRol" class="form-label">Rol</label>
                         <select class="form-select" id="editRol" name="id_rol" required>
                             <!-- Los roles se cargarán dinámicamente aquí mediante JavaScript -->
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Cambiar Contraseña</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Cambiar Contraseña -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePasswordModalLabel">Cambiar Contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <input type="hidden" id="changePasswordUserId" name="id">
+                    <div class="mb-3">
+                        <label for="oldPassword" class="form-label">Contraseña Antigua</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="oldPassword" name="oldPassword" required>
+                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="oldPassword">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Nueva Contraseña</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="newPassword">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirmar Nueva Contraseña</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="confirmPassword">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
                 </form>
             </div>
         </div>
@@ -129,6 +178,17 @@
 
 <!-- SweetAlert2 CDN para notificaciones -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Información del usuario actual (administrador logueado)
+window.currentUser = {
+    id: {{user.id}},
+    rut: '{{user.rut}}',
+    nombre: '{{user.nombre}}',
+    apellido: '{{user.apellido}}',
+    correo: '{{user.correo}}',
+    id_rol: {{user.id_rol}}
+};
+</script>
 <script src="/js/userCRUD.js"></script>
 
 {{!-- Enlace a SweetAlert2 (asegúrate de que esté incluido en tu layout principal si no lo pones aquí) --}}

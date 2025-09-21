@@ -12,29 +12,52 @@ document.addEventListener('DOMContentLoaded', () => {
         inputLicencia.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             archivoPdfSeleccionado = file; // Almacena el archivo seleccionado
-            if (file && file.type === 'application/pdf') {
-                resultadosDiv.style.display = 'none';
-                spinner.style.display = 'block';
-                enviarLicenciaBtn.disabled = true; // Deshabilita el botón mientras se procesa
 
-                try {
-                    const fileReader = new FileReader();
-                    fileReader.onload = async function() {
-                        const typedarray = new Uint8Array(this.result);
-                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                        let textoCompleto = '';
+            // Validar que el archivo sea PDF
+            if (!file) {
+                return; // No hay archivo seleccionado
+            }
 
-                        for (let i = 1; i <= pdf.numPages; i++) {
-                            const page = await pdf.getPage(i);
-                            const textContent = await page.getTextContent();
-                            const pageText = textContent.items.map(item => item.str).join(' ');
-                            textoCompleto += pageText + '\n';
-                        }
+            if (file.type !== 'application/pdf') {
+                // Limpiar el input
+                event.target.value = '';
+                archivoPdfSeleccionado = null;
 
-                        // Usamos la función de pdfExtractor.js
-                        const datos = extraerDatosLicencia(textoCompleto);
-                        datosExtraidosGlobal = datos; // Almacena los datos extraídos globalmente
-                        
+                // Mostrar error con Swal.fire
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Archivo no válido',
+                    text: 'Solo se permiten archivos PDF. Por favor selecciona un archivo con extensión .pdf',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
+            // Si es PDF válido, proceder con el procesamiento
+            resultadosDiv.style.display = 'none';
+            spinner.style.display = 'block';
+            enviarLicenciaBtn.disabled = true; // Deshabilita el botón mientras se procesa
+
+            try {
+                const fileReader = new FileReader();
+                fileReader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let textoCompleto = '';
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(' ');
+                        textoCompleto += pageText + '\n';
+                    }
+
+                    // Usamos la función de pdfExtractor.js
+                    const datos = extraerDatosLicencia(textoCompleto);
+                    datosExtraidosGlobal = datos; // Almacena los datos extraídos globalmente
+
+                    // Asegurar que el spinner se muestre por al menos 1.5 segundos
+                    setTimeout(() => {
                         document.getElementById('folio').textContent = datos.folio;
                         document.getElementById('nombre').textContent = datos.nombre;
                         document.getElementById('rut').textContent = datos.rut;
@@ -52,14 +75,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         spinner.style.display = 'none';
                         resultadosDiv.style.display = 'block';
                         enviarLicenciaBtn.disabled = false; // Habilita el botón
-                    };
-                    fileReader.readAsArrayBuffer(file);
-                } catch (error) {
-                    console.error('Error al procesar el PDF:', error);
-                    spinner.style.display = 'none';
-                    enviarLicenciaBtn.disabled = true; // Mantén el botón deshabilitado si hay un error
-                    alert('Hubo un error al procesar el archivo PDF. Asegúrate de que sea un archivo válido.');
-                }
+                    }, 1500);
+                };
+                fileReader.readAsArrayBuffer(file);
+            } catch (error) {
+                console.error('Error al procesar el PDF:', error);
+                spinner.style.display = 'none';
+                enviarLicenciaBtn.disabled = true; // Mantén el botón deshabilitado si hay un error
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al procesar el PDF',
+                    text: 'Hubo un error al procesar el archivo PDF. Asegúrate de que sea un archivo válido.',
+                    confirmButtonText: 'Entendido'
+                });
             }
         });
     }
@@ -70,7 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault(); // Evita el envío del formulario tradicional
 
             if (!archivoPdfSeleccionado || !datosExtraidosGlobal || !idUsuarioInput.value) {
-                alert('Por favor, primero carga un PDF y asegúrate de que se hayan extraído los datos y el ID de usuario esté disponible.');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Por favor, primero carga un PDF y asegúrate de que se hayan extraído los datos.',
+                    confirmButtonText: 'Entendido'
+                });
                 return;
             }
 
@@ -113,15 +146,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
 
                 if (response.ok) {
-                    alert(result.message);
-                    // Opcional: limpiar formulario o redirigir
-                    window.location.href = '/dashboard_usuario'; // Ejemplo de redirección
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: result.message,
+                        confirmButtonText: 'Aceptar'
+                    }).then(() => {
+                        window.location.href = '/dashboard_usuario';
+                    });
                 } else {
-                    alert(`Error: ${result.error || 'No se pudo crear la licencia.'}`);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: result.error || 'No se pudo crear la licencia.',
+                        confirmButtonText: 'Entendido'
+                    });
                 }
             } catch (error) {
                 console.error('Error al enviar licencia:', error);
-                alert('Hubo un error de red o de servidor al intentar enviar la licencia.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'Hubo un error de red o de servidor al intentar enviar la licencia.',
+                    confirmButtonText: 'Entendido'
+                });
             } finally {
                 spinner.style.display = 'none';
                 enviarLicenciaBtn.disabled = false;

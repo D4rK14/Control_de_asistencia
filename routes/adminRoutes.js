@@ -7,7 +7,7 @@
  */
 const express = require("express"); // Importa el framework Express para crear y gestionar rutas.
 const { verifyToken, authorizeRole } = require("../middlewares/authMiddleware.js"); // Importa los middlewares de autenticación y autorización.
-const { renderAdminUserDashboard, getUsersAndRoles, getUserById, createUser, updateUser, deleteUser } = require("../controllers/adminController.js"); // Importa las funciones del controlador de administración.
+const { renderAdminUserDashboard, getUsersAndRoles, getUserById, createUser, updateUser, deleteUser, changePassword } = require("../controllers/adminController.js"); // Importa las funciones del controlador de administración.
 const { renderAdminDashboard } = require("../controllers/userController.js"); // Importa la función para renderizar el dashboard de administrador.
 
 const router = express.Router(); // Crea una nueva instancia de un router de Express.
@@ -64,6 +64,13 @@ router.put("/admin/users/:id", updateUser);
  * Requiere el ID del usuario a eliminar como parámetro en la URL.
  */
 router.delete("/admin/users/:id", deleteUser);
+
+/**
+ * @route PUT /admin/users/:id/change-password
+ * @description Ruta para cambiar la contraseña de un usuario existente. Solo accesible para administradores.
+ * Requiere el ID del usuario como parámetro en la URL y oldPassword, newPassword en el cuerpo.
+ */
+router.put("/admin/users/:id/change-password", changePassword);
 
 // Exporta el router para que pueda ser utilizado por la aplicación principal (app.js).
 module.exports = router;
