@@ -22,57 +22,47 @@ const CategoriaAsistencia = require('../models/assistCategory'); // Modelo de Ca
  */
 const registrarAsistencia = async (req, res) => {
   try {
-    const { tipo } = req.body; // Extrae 'tipo' (entrada o salida) del cuerpo de la petición.
-    const id_usuario = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL.
-    const hoy = new Date().toISOString().slice(0, 10); // Obtiene la fecha actual en formato YYYY-MM-DD.
+    const { tipo } = req.body;
+    const id_usuario = req.params.id;
 
-    // Busca un registro de asistencia para el usuario actual y la fecha de hoy.
+    // Fecha local en YYYY-MM-DD
+    const hoy = new Date();
+    const fechaFormateada = hoy.getFullYear() + '-' +
+                             String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
+                             String(hoy.getDate()).padStart(2, '0');
+
     let asistencia = await Asistencia.findOne({
-      where: { id_usuario, fecha: hoy }
+      where: { id_usuario, fecha: fechaFormateada }
     });
 
-    // Lógica para el registro de entrada
     if (tipo === 'entrada') {
-      if (asistencia) {
-        // Si ya existe un registro, significa que ya marcó entrada.
-        return res.status(400).json({ error: 'Ya registraste tu entrada hoy.' });
-      }
+      if (asistencia) return res.status(400).json({ error: 'Ya registraste tu entrada hoy.' });
 
-      // Crea un nuevo registro de asistencia para la entrada.
       asistencia = await Asistencia.create({
-        id_usuario, // ID del usuario
-        fecha: hoy, // Fecha actual
-        hora_entrada: new Date().toLocaleTimeString('es-CL', { hour12: false }), // Hora de entrada en formato local (Chile)
-        id_estado: 1 // Establece el estado inicial de asistencia (ej: 1 = Presente)
+        id_usuario,
+        fecha: fechaFormateada,
+        hora_entrada: new Date().toLocaleTimeString('es-CL', { hour12: false }),
+        id_estado: 1
       });
 
       return res.json({ message: 'Entrada registrada con éxito', asistencia });
     }
 
-    // Lógica para el registro de salida
     if (tipo === 'salida') {
-      if (!asistencia) {
-        // Si no hay registro de entrada, no se puede registrar la salida.
-        return res.status(400).json({ error: 'No has marcado entrada aún.' });
-      }
-      if (asistencia.hora_salida) {
-        // Si ya existe una hora de salida, significa que ya marcó salida.
-        return res.status(400).json({ error: 'Ya registraste tu salida hoy.' });
-      }
+      if (!asistencia) return res.status(400).json({ error: 'No has marcado entrada aún.' });
+      if (asistencia.hora_salida) return res.status(400).json({ error: 'Ya registraste tu salida hoy.' });
 
-      // Actualiza el registro de asistencia con la hora de salida.
       asistencia.hora_salida = new Date().toLocaleTimeString('es-CL', { hour12: false });
-      await asistencia.save(); // Guarda los cambios en la base de datos.
+      await asistencia.save();
 
       return res.json({ message: 'Salida registrada con éxito', asistencia });
     }
 
-    // Si el tipo de registro no es 'entrada' ni 'salida', es un tipo inválido.
     return res.status(400).json({ error: 'Tipo inválido' });
 
   } catch (error) {
-    console.error('Error al registrar asistencia:', error); // Registra el error en la consola del servidor.
-    res.status(500).json({ error: 'Error al registrar asistencia' }); // Envía una respuesta de error al cliente.
+    console.error('Error al registrar asistencia:', error);
+    res.status(500).json({ error: 'Error al registrar asistencia' });
   }
 };
 
