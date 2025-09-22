@@ -27,6 +27,8 @@ const createLicense = async (req, res) => {
         }
 
         const id_usuario = req.body.id_usuario; // Asumiendo que el id_usuario viene en el cuerpo de la petición
+        console.log('req.body:', req.body);
+        console.log('req.file:', req.file);
         if (!id_usuario) {
             // Si no hay ID de usuario, eliminar el archivo subido para evitar basura
             await fs.unlink(req.file.path);
@@ -50,6 +52,23 @@ const createLicense = async (req, res) => {
 
         // Extraer datos de la licencia utilizando la función importada
         const datosExtraidos = extraerDatosLicencia(textoCompleto);
+        console.log('Datos extraídos del PDF:', datosExtraidos);
+
+        // Validar que los campos obligatorios no sean 'No encontrado'
+        const camposObligatorios = [
+            { nombre: 'folio', valor: datosExtraidos.folio },
+            { nombre: 'fecha_emision', valor: datosExtraidos.fechaEmision },
+            { nombre: 'fecha_inicio', valor: datosExtraidos.inicioReposo },
+            { nombre: 'fecha_fin', valor: datosExtraidos.fechaTermino },
+            { nombre: 'dias_reposo', valor: datosExtraidos.dias }
+        ];
+
+        for (const campo of camposObligatorios) {
+            if (campo.valor === 'No encontrado' || !campo.valor) {
+                await fs.unlink(pdfPath); // Eliminar el archivo subido
+                return res.status(400).json({ error: `Falta información obligatoria: ${campo.nombre}. No se pudo extraer del PDF.` });
+            }
+        }
 
         // Mapear los datos extraídos a los campos del modelo LicenciaMedica
         const nuevaLicencia = await LicenciaMedica.create({

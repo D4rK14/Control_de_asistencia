@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (key === 'direccion') fieldName = 'direccion_reposo';
                 else if (key === 'telefono') fieldName = 'telefono_contacto';
                 else if (key === 'fechaEmision') fieldName = 'fecha_emision';
-                else if (key === 'inicioReposo') fieldName = 'fech-inicio'; // Corregido
+                else if (key === 'inicioReposo') fieldName = 'fecha_inicio'; // Corregido
                 else if (key === 'fechaTermino') fieldName = 'fecha_fin';
                 else if (key === 'dias') fieldName = 'dias_reposo';
                 else if (key === 'tipoLicencia') fieldName = 'tipo_licencia';
