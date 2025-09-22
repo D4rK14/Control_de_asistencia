@@ -97,13 +97,42 @@ document.addEventListener('DOMContentLoaded', () => {
         enviarLicenciaBtn.addEventListener('click', async (event) => {
             event.preventDefault(); // Evita el envío del formulario tradicional
 
-            if (!archivoPdfSeleccionado || !datosExtraidosGlobal || !idUsuarioInput.value) {
-                Swal.fire({
+            // Comprobaciones más específicas para dar feedback claro al usuario
+            // Intentar localizar el input de id_usuario si no existe en la variable
+            if (!idUsuarioInput || !idUsuarioInput.value) {
+                const alt = document.querySelector('input[name="id_usuario"]');
+                if (alt && alt.value) {
+                    idUsuarioInput = alt; // usar fallback
+                }
+            }
+
+            if (!archivoPdfSeleccionado) {
+                (typeof Swal !== 'undefined') ? Swal.fire({
                     icon: 'warning',
-                    title: 'Datos incompletos',
-                    text: 'Por favor, primero carga un PDF y asegúrate de que se hayan extraído los datos.',
+                    title: 'Archivo faltante',
+                    text: 'Por favor selecciona un archivo PDF antes de enviar.',
                     confirmButtonText: 'Entendido'
-                });
+                }) : alert('Por favor selecciona un archivo PDF antes de enviar.');
+                return;
+            }
+
+            if (!datosExtraidosGlobal) {
+                (typeof Swal !== 'undefined') ? Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos no extraídos',
+                    text: 'Aún no se han extraído los datos del PDF. Espera a que termine el procesamiento y vuelve a intentarlo.',
+                    confirmButtonText: 'Entendido'
+                }) : alert('Aún no se han extraído los datos del PDF. Espera a que termine el procesamiento y vuelve a intentarlo.');
+                return;
+            }
+
+            if (!idUsuarioInput || !idUsuarioInput.value) {
+                (typeof Swal !== 'undefined') ? Swal.fire({
+                    icon: 'warning',
+                    title: 'Usuario no identificado',
+                    text: 'No se pudo determinar el ID del usuario. Inicia sesión o recarga la página.',
+                    confirmButtonText: 'Entendido'
+                }) : alert('No se pudo determinar el ID del usuario. Inicia sesión o recarga la página.');
                 return;
             }
 
@@ -140,25 +169,50 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch('/api/licenses', {
                     method: 'POST',
-                    body: formData // No establecer Content-Type, fetch lo hace automáticamente con FormData
+                    body: formData, // No establecer Content-Type, fetch lo hace automáticamente con FormData
+                    credentials: 'include' // Enviar cookies (accessToken) con la petición
                 });
 
-                const result = await response.json();
+                // Antes de parsear JSON, comprobar content-type para evitar intentar parsear HTML
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const result = await response.json();
 
-                if (response.ok) {
+                    if (response.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Éxito!',
+                            text: result.message,
+                            confirmButtonText: 'Aceptar'
+                        }).then(() => {
+                            window.location.href = '/dashboard_usuario';
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: result.error || 'No se pudo crear la licencia.',
+                            confirmButtonText: 'Entendido'
+                        });
+                    }
+                } else if (contentType.includes('text/html') || response.status === 302 || response.status === 401) {
+                    // Probablemente un redirect al login o respuesta HTML (sesión expirada)
                     Swal.fire({
-                        icon: 'success',
-                        title: '¡Éxito!',
-                        text: result.message,
-                        confirmButtonText: 'Aceptar'
+                        icon: 'warning',
+                        title: 'Sesión expirada o no autenticado',
+                        text: 'Tu sesión pudo haber expirado. Por favor inicia sesión de nuevo.',
+                        confirmButtonText: 'Ir al login'
                     }).then(() => {
-                        window.location.href = '/dashboard_usuario';
+                        window.location.href = '/login';
                     });
                 } else {
+                    // Respuesta inesperada, intentar leer texto para debugging
+                    const txt = await response.text();
+                    console.error('Respuesta inesperada del servidor:', txt);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: result.error || 'No se pudo crear la licencia.',
+                        text: 'Respuesta inesperada del servidor. Revisa la consola para más detalles.',
                         confirmButtonText: 'Entendido'
                     });
                 }

@@ -25,16 +25,25 @@ const JWT_SECRET = process.env.JWT_SECRET;
 function verifyToken(req, res, next) {
   const token = req.cookies.accessToken; // Intenta obtener el token de acceso de las cookies.
 
+  // Helper para saber si es una ruta API (para devolver JSON en vez de redirigir)
+  const isApi = req.path && req.path.startsWith('/api');
+
   if (!token) {
-    console.log("⛔ No hay token de acceso en las cookies, redirigiendo a /login");
-    return res.redirect("/login"); // Si no hay token, el usuario no está autenticado, redirige al login.
+    console.log("⛔ No hay token de acceso en las cookies");
+    if (isApi) {
+      return res.status(401).json({ error: 'No autenticado' });
+    }
+    return res.redirect("/login"); // Si no hay token y es ruta normal, redirige al login.
   }
 
   // Verifica el token utilizando la clave secreta.
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
       console.log("⛔ Token de acceso inválido o expirado:", err.message);
-      return res.redirect("/login"); // Si el token no es válido, redirige al login.
+      if (isApi) {
+        return res.status(401).json({ error: 'Token inválido o expirado' });
+      }
+      return res.redirect("/login"); // Si el token no es válido y es ruta normal, redirige al login.
     }
 
     // Si el token es válido, adjunta la información del usuario decodificada a `req.user`.
@@ -58,12 +67,18 @@ function authorizeRole(allowedRoles) {
     allowedRoles = [allowedRoles];
   }
 
+  // Normalizar allowedRoles a minúsculas para comparación case-insensitive
+  const allowedLower = allowedRoles.map(r => String(r).toLowerCase());
+
   // Devuelve el middleware real que Express utilizará.
   return (req, res, next) => {
-    // Verifica si el usuario (`req.user.rol`) tiene alguno de los roles permitidos.
-    if (!allowedRoles.includes(req.user.rol)) {
-      console.log(`⛔ Acceso denegado. Rol del usuario (${req.user.rol}) no autorizado para esta ruta.`);
-      // Si el rol no está permitido, redirige a una página de error o acceso denegado.
+    const userRole = req.user && req.user.rol ? String(req.user.rol).toLowerCase() : null;
+    if (!userRole || !allowedLower.includes(userRole)) {
+      console.log(`⛔ Acceso denegado. Rol del usuario (${req.user && req.user.rol}) no autorizado para esta ruta.`);
+      // Si la petición viene por /api preferimos devolver JSON, si no, redirect a página de error.
+      if (req.path && req.path.startsWith('/api')) {
+        return res.status(403).json({ error: 'Acceso denegado. Rol no autorizado.' });
+      }
       return res.redirect("/dashboard_error");
     }
     next(); // Si el rol es permitido, pasa el control al siguiente middleware o controlador.

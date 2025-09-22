@@ -1,5 +1,5 @@
 const LicenciaMedica = require('../models/lecense'); // Importa el modelo de LicenciaMedica
-const { extraerDatosLicencia } = require('../public/js/pdfExtractor'); // Importa la función de extracción de datos del PDF
+const { extraerDatosLicencia } = require('../helpers/pdfExtractorServer'); // Use server-side extractor helper
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.mjs'); // Importa pdf.js para el backend
 const fs = require('fs').promises; // Para trabajar con el sistema de archivos de forma asíncrona
 const multer = require('multer'); // Middleware para manejar la subida de archivos
@@ -26,13 +26,28 @@ const createLicense = async (req, res) => {
             return res.status(400).json({ error: 'No se ha subido ningún archivo PDF.' });
         }
 
-        const id_usuario = req.body.id_usuario; // Asumiendo que el id_usuario viene en el cuerpo de la petición
+        // Preferir el id del usuario proveniente del token (req.user) para evitar suplantación
+        let id_usuario = null;
+        if (req.user && req.user.id) {
+            id_usuario = Number(req.user.id);
+        } else if (req.body && req.body.id_usuario) {
+            id_usuario = Number(req.body.id_usuario);
+        }
+
+        console.log('req.user:', req.user);
         console.log('req.body:', req.body);
         console.log('req.file:', req.file);
-        if (!id_usuario) {
-            // Si no hay ID de usuario, eliminar el archivo subido para evitar basura
-            await fs.unlink(req.file.path);
-            return res.status(400).json({ error: 'ID de usuario no proporcionado.' });
+
+        // Validar id_usuario
+        if (!id_usuario || !Number.isInteger(id_usuario) || id_usuario <= 0) {
+            // Si no hay ID de usuario válido, eliminar el archivo subido para evitar basura
+            if (req.file && req.file.path) await fs.unlink(req.file.path);
+            return res.status(400).json({ error: 'ID de usuario no proporcionado o inválido.' });
+        }
+
+        // Si el body llevaba un id diferente al del token, loggear para auditoría
+        if (req.body && req.body.id_usuario && Number(req.body.id_usuario) !== id_usuario) {
+            console.warn(`Advertencia: el id_usuario enviado en el body (${req.body.id_usuario}) difiere del id del token (${id_usuario}). Se usará el id del token.`);
         }
 
         const pdfPath = req.file.path; // Ruta temporal del archivo PDF subido por Multer
@@ -54,6 +69,15 @@ const createLicense = async (req, res) => {
         const datosExtraidos = extraerDatosLicencia(textoCompleto);
         console.log('Datos extraídos del PDF:', datosExtraidos);
 
+        // Helper para normalizar fechas a YYYY-MM-DD (espera dd-mm-yyyy o dd/mm/yyyy)
+        const parseFecha = (f) => {
+            if (!f || f === 'No encontrado') return null;
+            // Acepta formatos dd-mm-yyyy o dd/mm/yyyy
+            const m = f.match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);
+            if (!m) return null;
+            return `${m[3]}-${m[2]}-${m[1]}`; // YYYY-MM-DD
+        };
+
         // Validar que los campos obligatorios no sean 'No encontrado'
         const camposObligatorios = [
             { nombre: 'folio', valor: datosExtraidos.folio },
@@ -74,11 +98,10 @@ const createLicense = async (req, res) => {
         const nuevaLicencia = await LicenciaMedica.create({
             id_usuario: id_usuario,
             folio: datosExtraidos.folio !== 'No encontrado' ? datosExtraidos.folio : null,
-            fecha_emision: datosExtraidos.fechaEmision !== 'No encontrado' ? datosExtraidos.fechaEmision : null,
-            fecha_inicio: datosExtraidos.inicioReposo !== 'No encontrado' ? datosExtraidos.inicioReposo : null,
-            fecha_fin: datosExtraidos.fechaTermino !== 'No encontrado' ? datosExtraidos.fechaTermino : null,
+            fecha_emision: parseFecha(datosExtraidos.fechaEmision),
+            fecha_inicio: parseFecha(datosExtraidos.inicioReposo),
+            fecha_fin: parseFecha(datosExtraidos.fechaTermino),
             dias_reposo: datosExtraidos.dias !== 'No encontrado' ? parseInt(datosExtraidos.dias) : null,
-            // diagnostico: datosExtraidos.diagnostico, // No se extrae directamente aún
             profesional: datosExtraidos.profesional !== 'No encontrado' ? datosExtraidos.profesional : null,
             nombre_trabajador: datosExtraidos.nombre !== 'No encontrado' ? datosExtraidos.nombre : null,
             rut_trabajador: datosExtraidos.rut !== 'No encontrado' ? datosExtraidos.rut : null,
@@ -95,7 +118,10 @@ const createLicense = async (req, res) => {
 
         res.status(201).json({ message: 'Licencia creada con éxito', licencia: nuevaLicencia });
     } catch (error) {
-        console.error('Error al crear licencia:', error);
+        console.error('Error al crear licencia:', error && error.stack ? error.stack : error);
+        if (error && error.original) {
+            console.error('SQL error details:', error.original);
+        }
         // Si hubo un error y el archivo temporal existe, intentar eliminarlo
         if (req.file && req.file.path) {
             try {

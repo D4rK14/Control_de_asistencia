@@ -128,8 +128,8 @@ app.use('/', authRoutes); // Usa las rutas de autenticación para la raíz de la
 app.use('/', userRoutes); // Usa las rutas de usuario
 app.use('/', pdfRoutes);  // Usa las rutas de PDF
 app.use('/', asistenciaRoutes); // Usa las rutas de asistencia
-app.use('/', adminRoutes); // Usa las rutas de administración de usuarios
 app.use('/api', licenseRoutes); // Usa las rutas de licencias médicas con prefijo /api
+app.use('/', adminRoutes); // Usa las rutas de administración de usuarios
 
 /**
  * Middleware para manejar rutas no encontradas (404)

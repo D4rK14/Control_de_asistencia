@@ -29,7 +29,9 @@ const renderUpload = (req, res) => {
  * @returns {void} Renderiza la plantilla `justificaciones/licencia_medica.hbs`.
  */
 const renderPdfView = (req, res) => {
-  res.render("justificaciones/licencia_medica");
+  // Pasamos `req.user` (con el middleware verifyToken) para que la vista pueda
+  // incluir el ID del usuario en el input hidden (ej: {{usuario.id}}).
+  res.render("justificaciones/licencia_medica", { usuario: req.user });
 };
 
 /**
