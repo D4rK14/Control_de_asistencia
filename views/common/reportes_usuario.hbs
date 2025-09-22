@@ -4,8 +4,26 @@
       <h2>Mis Reportes de Asistencia</h2>
       <a href="/dashboard_usuario" class="btn btn-secondary">← Volver al Dashboard</a>
     </div>
+
+    <div class="mb-4">
+        <button class="btn btn-info" type="button" id="toggleCalendarBtn" aria-expanded="false" aria-controls="calendarCollapse">
+            Ver Calendario
+        </button>
+    </div>
+
+    <!-- Calendario de Asistencia -->
+    <div class="collapse" id="calendarCollapse">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Calendario de Asistencia</h5>
+            </div>
+            <div class="card-body">
+                <div id='calendar'></div>
+            </div>
+        </div>
+    </div>
     
-    <!-- Reportes personales -->
+    <!-- Reportes personales (la tabla existente) -->
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0">Historial de Asistencias</h5>
@@ -127,57 +145,100 @@
   <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
   <script>
     window.usuarioId = {{usuario.id}};
+    const calendarEventsData = JSON.parse('{{{calendarEvents}}}');
 
-    // Función de filtrado de asistencias
     document.addEventListener('DOMContentLoaded', function() {
-      const filterAll = document.getElementById('filter-all');
-      const categoryFilters = document.querySelectorAll('.category-filter');
-      const tableRows = document.querySelectorAll('#asistenciasTable tbody tr');
-
-      // Función para aplicar filtros
-      function applyFilters() {
-        const selectedCategories = Array.from(categoryFilters)
-          .filter(checkbox => checkbox.checked)
-          .map(checkbox => checkbox.value);
-
-        tableRows.forEach(row => {
-          const categoryCell = row.querySelector('td:nth-child(4) .badge');
-          if (categoryCell) {
-            const categoryName = categoryCell.textContent.trim();
-            const shouldShow = selectedCategories.includes(categoryName);
-            row.style.display = shouldShow ? '' : 'none';
-          }
+        // Inicialización del Calendario
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'es',
+            height: 500, // Ajustar a una altura fija, por ejemplo, 500px
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: calendarEventsData,
+            eventDidMount: function(info) {
+                // Personalizar tooltip (usando Bootstrap tooltips)
+                // if (info.event.extendedProps) {
+                //     const tooltip = new bootstrap.Tooltip(info.el, {
+                //         title: `Entrada: ${info.event.extendedProps.hora_entrada}\nSalida: ${info.event.extendedProps.hora_salida}\nEstado: ${info.event.extendedProps.estado_detalle}\nCategoría: ${info.event.extendedProps.categoria_detalle}`,
+                //         placement: 'top',
+                //         trigger: 'hover',
+                //         container: 'body',
+                //         html: true
+                //     });
+                // }
+            },
+            dateClick: function(info) {
+                // Puedes añadir una acción al hacer clic en una fecha
+                // alert('Día clicado: ' + info.dateStr);
+            }
         });
-      }
 
-      // Event listener para el checkbox "Todos"
-      filterAll.addEventListener('change', function() {
-        const isChecked = this.checked;
+        // Control programático del colapso del calendario
+        var calendarCollapseElement = document.getElementById('calendarCollapse');
+        var toggleCalendarBtn = document.getElementById('toggleCalendarBtn');
+        var calendarCollapse = new bootstrap.Collapse(calendarCollapseElement, {
+            toggle: false // Evita que se inicialice en un estado toggled
+        });
+
+        toggleCalendarBtn.addEventListener('click', function() {
+            calendarCollapse.toggle(); // Alterna la visibilidad
+        });
+
+        calendarCollapseElement.addEventListener('shown.bs.collapse', function () {
+            calendar.render(); // Renderiza el calendario cuando el div es visible
+            toggleCalendarBtn.textContent = 'Ocultar Calendario'; // Cambia el texto del botón
+        });
+        
+        calendarCollapseElement.addEventListener('hidden.bs.collapse', function () {
+            toggleCalendarBtn.textContent = 'Ver Calendario'; // Cambia el texto del botón
+        });
+
+        // Lógica de filtrado de asistencias (consolidada aquí)
+        const filterAll = document.getElementById('filter-all');
+        const categoryFilters = document.querySelectorAll('.category-filter');
+        const tableRows = document.querySelectorAll('#asistenciasTable tbody tr');
+
+        function applyFilters() {
+            const selectedCategories = Array.from(categoryFilters)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.value);
+
+            tableRows.forEach(row => {
+                const categoryCell = row.querySelector('td:nth-child(4) .badge');
+                if (categoryCell) {
+                    const categoryName = categoryCell.textContent.trim();
+                    const shouldShow = selectedCategories.includes(categoryName);
+                    row.style.display = shouldShow ? '' : 'none';
+                }
+            });
+        }
+
+        filterAll.addEventListener('change', function() {
+            const isChecked = this.checked;
+            categoryFilters.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+            applyFilters();
+        });
+
         categoryFilters.forEach(checkbox => {
-          checkbox.checked = isChecked;
+            checkbox.addEventListener('change', function() {
+                if (!this.checked) {
+                    filterAll.checked = false;
+                }
+                const allChecked = Array.from(categoryFilters).every(cb => cb.checked);
+                filterAll.checked = allChecked;
+                applyFilters();
+            });
         });
-        applyFilters();
-      });
 
-      // Event listeners para los checkboxes de categoría
-      categoryFilters.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-          // Si se desmarca alguna categoría, desmarcar "Todos"
-          if (!this.checked) {
-            filterAll.checked = false;
-          }
-          // Si todas las categorías están marcadas, marcar "Todos"
-          const allChecked = Array.from(categoryFilters).every(cb => cb.checked);
-          filterAll.checked = allChecked;
-
-          applyFilters();
-        });
-      });
-
-      // Aplicar filtros iniciales (todos marcados por defecto)
-      applyFilters();
+        applyFilters(); // Aplicar filtros iniciales
     });
   </script>
   <script src="/js/dashboard_usuario.js"></script>
 </body>
-</html>

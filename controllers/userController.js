@@ -8,6 +8,10 @@
 // Importación de funciones necesarias de otros controladores o módulos.
 const { getMisAsistenciasByUserId } = require("../controllers/assistController"); // Función para obtener las asistencias de un usuario.
 const { _fetchUsersAndRolesData } = require("../controllers/adminController"); // Importa la función interna para obtener usuarios y roles.
+const Asistencia = require('../models/assist'); // Importar el modelo Asistencia
+const EstadoAsistencia = require('../models/StateAssist'); // Importar el modelo EstadoAsistencia
+const CategoriaAsistencia = require('../models/assistCategory'); // Importar el modelo CategoriaAsistencia
+const moment = require('moment-timezone'); // Para formatear fechas
 
 /**
  * @function renderHome
@@ -98,13 +102,79 @@ const renderAdminDashboard = async (req, res) => {
 const renderUserReports = async (req, res) => {
   try {
     const id_usuario = req.user.id; // Extrae el ID del usuario del objeto `req.user`.
-    // Llama a la función `getMisAsistenciasByUserId` para obtener todas las asistencias de este usuario.
-    const asistencias = await getMisAsistenciasByUserId(id_usuario);
 
-    // Renderiza la vista de reportes, pasando el objeto `usuario` y el arreglo de `asistencias`.
+    const asistencias = await Asistencia.findAll({
+        where: { id_usuario },
+        include: [
+            { model: EstadoAsistencia, as: 'estado', attributes: ['estado'] },
+            { model: CategoriaAsistencia, as: 'categoria', attributes: ['nombre'] }
+        ],
+        order: [['fecha', 'ASC']]
+    });
+
+    // Convertir las instancias de Sequelize a objetos planos
+    const plainAsistencias = asistencias.map(assist => assist.toJSON());
+
+    const calendarEvents = plainAsistencias.map(asistencia => {
+        let color = '#6c757d'; // Default secondary color
+        let title = 'Asistencia';
+
+        if (asistencia.categoria && asistencia.categoria.nombre) {
+            title = asistencia.categoria.nombre;
+            switch (asistencia.categoria.nombre) {
+                case 'Entrada Normal':
+                case 'Salida Normal':
+                    color = '#28a745'; // Green for Presente
+                    break;
+                case 'Atraso':
+                    color = '#ffc107'; // Yellow for Atraso
+                    break;
+                case 'Inasistencia':
+                    color = '#343a40'; // Dark for Inasistencia
+                    break;
+                case 'Salida Anticipada':
+                    color = '#fd7e14'; // Orange for Salida Anticipada
+                    break;
+                default:
+                    color = '#007bff'; // Blue for other categories
+            }
+        } else if (asistencia.estado && asistencia.estado.estado) {
+            title = asistencia.estado.estado;
+            switch (asistencia.estado.estado) {
+                case 'Presente':
+                    color = '#28a745';
+                    break;
+                case 'Ausente':
+                    color = '#dc3545'; // Red for Ausente
+                    break;
+                case 'Justificado':
+                case 'Licencia Médica':
+                case 'Permiso Administrativo':
+                    color = '#17a2b8'; // Teal for Justificado/Licencia/Permiso
+                    break;
+                default:
+                    color = '#6c757d';
+            }
+        }
+
+        return {
+            title: title,
+            start: moment(asistencia.fecha).format('YYYY-MM-DD'),
+            backgroundColor: color,
+            borderColor: color,
+            extendedProps: {
+                hora_entrada: asistencia.hora_entrada ? moment(asistencia.hora_entrada, 'HH:mm:ss').format('HH:mm') : 'N/A',
+                hora_salida: asistencia.hora_salida ? moment(asistencia.hora_salida, 'HH:mm:ss').format('HH:mm') : 'N/A',
+                estado_detalle: asistencia.estado ? asistencia.estado.estado : 'N/A',
+                categoria_detalle: asistencia.categoria ? asistencia.categoria.nombre : 'N/A'
+            }
+        };
+    });
+
     res.render("common/reportes_usuario", {
       usuario: { ...req.user, isAdmin: req.user.rol === 'Administrador' },
-      asistencias: asistencias
+      asistencias: plainAsistencias, // Pasar los objetos planos a la tabla
+      calendarEvents: JSON.stringify(calendarEvents)
     });
   } catch (error) {
     // Si ocurre un error durante la obtención de asistencias o el renderizado,
