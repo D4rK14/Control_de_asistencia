@@ -66,13 +66,12 @@ function authorizeRole(allowedRoles) {
   if (typeof allowedRoles === "string") {
     allowedRoles = [allowedRoles];
   }
-
   // Normalizar allowedRoles a minúsculas para comparación case-insensitive
   const allowedLower = allowedRoles.map(r => String(r).toLowerCase());
 
-  // Devuelve el middleware real que Express utilizará.
   return (req, res, next) => {
     const userRole = req.user && req.user.rol ? String(req.user.rol).toLowerCase() : null;
+
     if (!userRole || !allowedLower.includes(userRole)) {
       console.log(`⛔ Acceso denegado. Rol del usuario (${req.user && req.user.rol}) no autorizado para esta ruta.`);
       // Si la petición viene por /api preferimos devolver JSON, si no, redirect a página de error.

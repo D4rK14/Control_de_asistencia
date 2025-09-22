@@ -6,6 +6,9 @@
         {{#if usuario.isAdmin}}
         <a href="/admin/users" class="btn btn-info">Gestión de Usuarios</a>
         {{/if}}
+        {{#if (or (eq usuario.rol 'Administrador') (eq usuario.rol 'rr.hh'))}}
+        <a href="/reports/absence" class="btn btn-primary">Reportes Generales</a>
+        {{/if}}
         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#confirmLogoutModal">
             Cerrar Sesión
         </button>
