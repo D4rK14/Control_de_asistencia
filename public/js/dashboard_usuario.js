@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tipo = event.submitter.value;
 
       try {
-        const response = await fetch(`/asistencia/${usuarioId}`, {
+        const response = await fetch(`/asistencia/registrar/${usuarioId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tipo })

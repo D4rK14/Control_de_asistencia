@@ -89,26 +89,30 @@ const registrarAsistencia = async (req, res) => {
       if (asistencia.hora_salida) return res.status(400).json({ error: 'Ya registraste tu salida hoy.' });
 
       const horaActual = moment().tz('America/Santiago').format('HH:mm:ss'); // Usar moment para hora
-      const idCategoria = determinarCategoriaAsistencia('salida', horaActual);
+      const idCategoriaSalida = determinarCategoriaAsistencia('salida', horaActual);
 
+      // Obtener la categoría que se registró en la entrada (si existe)
+      const categoriaEntrada = asistencia.id_categoria ? Number(asistencia.id_categoria) : 1;
 
-      // Lógica para determinar la categoría final
+      // Determinar categoría final combinando entrada/salida
+      let idCategoriaFinal = idCategoriaSalida; // por defecto tomar la calculada para la salida
+
       if (categoriaEntrada === 4 && idCategoriaSalida === 3) {
-        // Si llegó tarde y se fue temprano, es "Atraso y Salida Anticipada"
+        // Llegó tarde y se fue temprano -> Atraso y Salida Anticipada
         idCategoriaFinal = 6;
       } else if (categoriaEntrada === 1 && idCategoriaSalida === 3) {
-        // Si llegó a tiempo pero se fue temprano, es "Salida Anticipada"
+        // Llegó a tiempo pero se fue temprano -> Salida Anticipada
         idCategoriaFinal = 3;
       } else if (categoriaEntrada === 4 && idCategoriaSalida === 2) {
-        // Si llegó tarde pero se fue a tiempo, sigue siendo "Atraso"
+        // Llegó tarde pero se fue a tiempo -> sigue siendo Atraso
         idCategoriaFinal = 4;
       } else if (categoriaEntrada === 1 && idCategoriaSalida === 2) {
-        // Si llegó a tiempo y se fue a tiempo, es "Salida Normal"
+        // Llegó a tiempo y se fue a tiempo -> Salida Normal
         idCategoriaFinal = 2;
       }
-      
+
       asistencia.hora_salida = horaActual;
-      asistencia.id_categoria = idCategoria;
+      asistencia.id_categoria = idCategoriaFinal;
       await asistencia.save();
 
       return res.json({ message: 'Salida registrada con éxito', asistencia });
@@ -117,8 +121,11 @@ const registrarAsistencia = async (req, res) => {
     return res.status(400).json({ error: 'Tipo inválido' });
 
   } catch (error) {
-    console.error('Error al registrar asistencia:', error);
-    res.status(500).json({ error: 'Error al registrar asistencia' });
+    console.error('Error al registrar asistencia:', error.stack || error);
+    // En desarrollo devolvemos más detalles para facilitar depuración; en producción ocultamos detalles.
+    const payload = { error: 'Error al registrar asistencia' };
+    if (process.env.NODE_ENV !== 'production') payload.details = error.message || String(error);
+    res.status(500).json(payload);
   }
 };
 
