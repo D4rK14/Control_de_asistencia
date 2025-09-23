@@ -29,8 +29,8 @@ const LicenciaMedica = sequelize.define('licencia_medica', {
     // Número de folio de la licencia médica, un identificador único externo.
     folio:{
         type: DataTypes.STRING,
-        allowNull: false, // No permite valores nulos.
-        unique: true // Asegura que no haya folios duplicados.
+        allowNull: false // No permite valores nulos.
+        // unique: true // Asegura que no haya folios duplicados.
     },
     // Fecha de emisión de la licencia médica.
     fecha_emision: {
@@ -51,11 +51,6 @@ const LicenciaMedica = sequelize.define('licencia_medica', {
     dias_reposo:{
         type: DataTypes.INTEGER,
         allowNull: false // No permite valores nulos.
-    },
-    // Diagnóstico médico que justifica la licencia.
-    diagnostico:{
-        type: DataTypes.STRING,
-        allowNull: true // Permite valores nulos, podría no ser siempre explícito o completo.
     },
     // Nombre del profesional de la salud que emitió la licencia.
     profesional:{

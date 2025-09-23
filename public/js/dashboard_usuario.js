@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tipo = event.submitter.value;
 
       try {
-        const response = await fetch(`/asistencia/${usuarioId}`, {
+        const response = await fetch(`/asistencia/registrar/${usuarioId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tipo })
@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (response.ok) {
           notificationModalBody.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
-          cargarMisAsistencias(usuarioId);
         } else {
           notificationModalBody.innerHTML = `<div class="alert alert-danger">${data.error || 'Error al registrar asistencia.'}</div>`;
         }
@@ -33,28 +32,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function cargarMisAsistencias(id) {
-    try {
-      const response = await fetch(`/asistencia/mis-asistencias/${id}`);
-      const asistencias = await response.json();
-      const tableBody = document.querySelector('#asistenciasTable tbody');
-      tableBody.innerHTML = '';
-
-      asistencias.forEach(a => {
-        const row = tableBody.insertRow();
-        row.insertCell().textContent = a.fecha;
-        row.insertCell().textContent = a.hora_entrada;
-        row.insertCell().textContent = a.hora_salida || '-';
-        row.insertCell().textContent = a.tipo_asistencia;
-        const justCell = row.insertCell();
-        justCell.innerHTML = a.documento && a.documento !== '-' ? `<a href="${a.documento}" target="_blank">Ver</a>` : '-';
-      });
-    } catch (error) {
-      console.error('Error al cargar asistencias:', error);
-      notificationModalBody.innerHTML = '<div class="alert alert-danger">Error al cargar los reportes de asistencia.</div>';
-      notificationModal.show();
-    }
-  }
-
-  cargarMisAsistencias(usuarioId);
 });

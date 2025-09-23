@@ -61,8 +61,7 @@ INSERT INTO `categoria_asistencia` (`id`, `nombre`, `descripcion`) VALUES
 	(1, 'Entrada Normal', 'Marcaje de entrada en horario establecido'),
 	(2, 'Salida Normal', 'Marcaje de salida en horario establecido'),
 	(3, 'Atraso', 'Entrada posterior al horario laboral definido'),
-	(4, 'Horas Extras', 'Salida después del horario regular'),
-	(5, 'Inasistencia', 'Día completo sin presentarse');
+	(4, 'Inasistencia', 'Día completo sin presentarse');
 
 -- Volcando estructura para tabla asistencia.estadoasistencia
 CREATE TABLE IF NOT EXISTS `estadoasistencia` (

@@ -8,6 +8,12 @@
 // Importación de funciones necesarias de otros controladores o módulos.
 const { getMisAsistenciasByUserId } = require("../controllers/assistController"); // Función para obtener las asistencias de un usuario.
 const { _fetchUsersAndRolesData } = require("../controllers/adminController"); // Importa la función interna para obtener usuarios y roles.
+const Asistencia = require('../models/assist'); // Importar el modelo Asistencia
+const EstadoAsistencia = require('../models/StateAssist'); // Importar el modelo EstadoAsistencia
+const CategoriaAsistencia = require('../models/assistCategory'); // Importar el modelo CategoriaAsistencia
+const moment = require('moment-timezone'); // Para formatear fechas
+// const fetch = require('node-fetch'); // Ya no es necesario aquí
+const { getChileanHolidays } = require('../helpers/holidayUtils'); // Importar desde el nuevo archivo
 
 /**
  * @function renderHome
@@ -28,24 +34,18 @@ const renderHome = (req, res) => {
  * antes de mostrar la vista. Los datos del usuario (`req.user`) son provistos por el middleware de autenticación.
  * @param {Object} req - Objeto de solicitud de Express (espera `req.user` con datos del usuario).
  * @param {Object} res - Objeto de respuesta de Express.
- * @returns {Promise<void>} Renderiza la plantilla `common/dashboard_usuario.hbs` con los datos del usuario y sus asistencias,
+ * @returns {Promise<void>} Renderiza la plantilla `common/dashboard_usuario.hbs` con los datos del usuario,
  * o una página de error si falla la carga de datos.
  */
 const renderUserDashboard = async (req, res) => {
   // `req.user` contiene la información del usuario autenticado, gracias al middleware `authMiddleware.js`.
   try {
-    const id_usuario = req.user.id; // Extrae el ID del usuario del objeto `req.user`.
-    // Llama a la función `getMisAsistenciasByUserId` para obtener todas las asistencias de este usuario.
-    const asistencias = await getMisAsistenciasByUserId(id_usuario);
-
     // Renderiza la vista del dashboard, pasando el objeto `usuario` (con datos de `req.user`)
-    // y el arreglo de `asistencias` obtenido de la base de datos.
     res.render("common/dashboard_usuario", {
-      usuario: { ...req.user, isAdmin: req.user.rol === 'Administrador' },  // Objeto de usuario para acceder a propiedades como {{usuario.rut}}, {{usuario.nombre}}
-      asistencias: asistencias // Arreglo de asistencias del usuario para mostrar en la tabla de reportes.
+      usuario: { ...req.user, isAdmin: req.user.rol === 'Administrador' }
     });
   } catch (error) {
-    // Si ocurre un error durante la obtención de asistencias o el renderizado,
+    // Si ocurre un error durante el renderizado,
     // se registra el error y se muestra una página de error al usuario.
     console.error("Error al renderizar el dashboard del usuario:", error);
     res.status(500).render("common/dashboard_error", { message: "Error al cargar el dashboard." });
@@ -91,9 +91,132 @@ const renderAdminDashboard = async (req, res) => {
   }
 };
 
+/**
+ * @function renderUserReports
+ * @description Renderiza la vista de reportes personales para un usuario autenticado.
+ * Esta función está protegida por middleware JWT y carga los datos de asistencia del usuario
+ * para mostrarlos en una vista dedicada.
+ * @param {Object} req - Objeto de solicitud de Express (espera `req.user` con datos del usuario).
+ * @param {Object} res - Objeto de respuesta de Express.
+ * @returns {Promise<void>} Renderiza la plantilla `common/reportes_usuario.hbs` con los datos del usuario y sus asistencias,
+ * o una página de error si falla la carga de datos.
+ */
+const renderUserReports = async (req, res) => {
+  try {
+    const id_usuario = req.user.id; // Extrae el ID del usuario del objeto `req.user`.
+
+    const asistencias = await Asistencia.findAll({
+        where: { id_usuario },
+        include: [
+            { model: EstadoAsistencia, as: 'estado', attributes: ['estado'] },
+            { model: CategoriaAsistencia, as: 'categoria', attributes: ['nombre'] }
+        ],
+        order: [['fecha', 'ASC']]
+    });
+
+    // Convertir las instancias de Sequelize a objetos planos
+    const plainAsistencias = asistencias.map(assist => assist.toJSON());
+
+    const calendarEvents = plainAsistencias.map(asistencia => {
+        let color = '#6c757d'; // Default secondary color
+        let title = 'Asistencia';
+
+        if (asistencia.categoria && asistencia.categoria.nombre) {
+            title = asistencia.categoria.nombre;
+            switch (asistencia.categoria.nombre) {
+                case 'Entrada Normal':
+                case 'Salida Normal':
+                    color = '#28a745'; // Green for Presente
+                    break;
+                case 'Atraso':
+                    color = '#ffc107'; // Yellow for Atraso
+                    break;
+                case 'Inasistencia':
+                    color = '#343a40'; // Dark for Inasistencia
+                    break;
+                case 'Salida Anticipada':
+                    color = '#fd7e14'; // Orange for Salida Anticipada
+                    break;
+                default:
+                    color = '#007bff'; // Blue for other categories
+            }
+        } else if (asistencia.estado && asistencia.estado.estado) {
+            title = asistencia.estado.estado;
+            switch (asistencia.estado.estado) {
+                case 'Presente':
+                    color = '#28a745';
+                    break;
+                case 'Ausente':
+                    color = '#dc3545'; // Red for Ausente
+                    break;
+                case 'Justificado':
+                case 'Licencia Médica':
+                case 'Permiso Administrativo':
+                    color = '#17a2b8'; // Teal for Justificado/Licencia/Permiso
+                    break;
+                default:
+                    color = '#6c757d';
+            }
+        }
+
+        return {
+            title: title,
+            start: moment(asistencia.fecha).format('YYYY-MM-DD'),
+            backgroundColor: color,
+            borderColor: color,
+            extendedProps: {
+                hora_entrada: asistencia.hora_entrada ? moment(asistencia.hora_entrada, 'HH:mm:ss').format('HH:mm') : 'N/A',
+                hora_salida: asistencia.hora_salida ? moment(asistencia.hora_salida, 'HH:mm:ss').format('HH:mm') : 'N/A',
+                estado_detalle: asistencia.estado ? asistencia.estado.estado : 'N/A',
+                categoria_detalle: asistencia.categoria ? asistencia.categoria.nombre : 'N/A'
+            }
+        };
+    });
+
+    // Obtener feriados para el año actual y añadirlos a los eventos del calendario
+    const currentYear = moment().year();
+    const chileanHolidays = await getChileanHolidays(currentYear); // Usar la función importada
+    calendarEvents.push(...chileanHolidays); // Añadir feriados a la lista de eventos
+
+    res.render("common/reportes_usuario", {
+      usuario: { ...req.user, isAdmin: req.user.rol === 'Administrador' },
+      asistencias: plainAsistencias, // Pasar los objetos planos a la tabla
+      calendarEvents: JSON.stringify(calendarEvents)
+    });
+  } catch (error) {
+    // Si ocurre un error durante la obtención de asistencias o el renderizado,
+    // se registra el error y se muestra una página de error al usuario.
+    console.error("Error al renderizar los reportes del usuario:", error);
+    res.status(500).render("common/dashboard_error", { message: "Error al cargar los reportes." });
+  }
+};
+
+// Función para obtener feriados de feriados.cl (ELIMINAR ESTA FUNCIÓN DE AQUÍ)
+// const getChileanHolidays = async (year = moment().year()) => {
+//     try {
+//         const response = await fetch(`https://api.feriados.cl/api/feriados/${year}`);
+//         if (!response.ok) {
+//             throw new Error(`Error al obtener feriados: ${response.statusText}`);
+//         }
+//         const data = await response.json();
+//         return data.data.map(holiday => ({
+//             title: holiday.nombre,
+//             start: holiday.fecha,
+//             backgroundColor: '#007bff', // Color para feriados
+//             borderColor: '#007bff',
+//             allDay: true
+//             // Puedes añadir más propiedades si FullCalendar las usa, como extendedProps para tooltips
+//         }));
+//     } catch (error) {
+//         console.error('Error al obtener los feriados de Chile:', error);
+//         return [];
+//     }
+// };
+
 // Exporta las funciones del controlador para que puedan ser utilizadas por los routers de Express.
 module.exports = {
   renderHome,
   renderUserDashboard,
-  renderAdminDashboard
+  renderAdminDashboard,
+  renderUserReports
 };

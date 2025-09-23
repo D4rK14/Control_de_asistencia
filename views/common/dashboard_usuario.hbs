@@ -1,18 +1,19 @@
 <body>
   <div class="container mt-4 mb-4">
-    <h2 class="mb-4">Bienvenido, {{usuario.nombre}}</h2>
-
-    <div class="d-flex justify-content-end mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="mb-0">Bienvenido, {{usuario.nombre}}</h2>
+      <div class="d-flex gap-2">
+        {{#if usuario.isAdmin}}
+        <a href="/admin/users" class="btn btn-info">Gestión de Usuarios</a>
+        {{/if}}
+        {{#if (or (eq usuario.rol 'Administrador') (eq usuario.rol 'rr.hh'))}}
+        <a href="/reports/absence" class="btn btn-primary">Reportes Generales</a>
+        {{/if}}
         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#confirmLogoutModal">
             Cerrar Sesión
         </button>
+      </div>
     </div>
-
-    {{#if usuario.isAdmin}}
-    <div class="d-flex justify-content-end mb-4">
-        <a href="/admin/users" class="btn btn-info">Gestión de Usuarios</a>
-    </div>
-    {{/if}}
 
     <!-- Marcación de asistencia -->
     <div class="card mb-4">
@@ -25,38 +26,14 @@
       </div>
     </div>
 
-    <!-- Reportes personales -->
+    <!-- Acceso a reportes -->
     <div class="card mb-4">
-      <div class="card-header">Tus Reportes</div>
+      <div class="card-header">Mis Reportes</div>
       <div class="card-body">
-        <table class="table table-striped" id="asistenciasTable">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Hora Entrada</th>
-              <th>Hora Salida</th>
-              <th>Tipo</th>
-              <th>Justificación</th>
-            </tr>
-          </thead>
-          <tbody>
-            {{#each asistencias}}
-            <tr>
-              <td>{{this.fecha}}</td>
-              <td>{{this.hora_entrada}}</td>
-              <td>{{this.hora_salida}}</td>
-              <td>{{this.tipo_asistencia}}</td>
-              <td>
-                {{#if this.documento}}
-                  <a href="{{this.documento}}" target="_blank">Ver</a>
-                {{else}}
-                  -
-                {{/if}}
-              </td>
-            </tr>
-            {{/each}}
-          </tbody>
-        </table>
+        <p class="mb-3">Accede a tu historial completo de asistencias y justificaciones.</p>
+        <a href="/reportes_usuario" class="btn btn-primary">
+          <i class="fas fa-chart-line"></i> Ver Mis Reportes
+        </a>
       </div>
     </div>
 

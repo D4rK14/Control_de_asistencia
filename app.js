@@ -21,6 +21,7 @@ const pdfRoutes = require('./routes/pdfRoutes');   // Rutas para funcionalidades
 const asistenciaRoutes = require('./routes/assistRoutes'); // Rutas para el registro y consulta de asistencia
 const adminRoutes = require('./routes/adminRoutes'); // Rutas para la administración de usuarios (CRUD)
 const licenseRoutes = require('./routes/licenseRoutes'); // Rutas para la gestión de licencias médicas
+const reportRoutes = require('./routes/reportRoutes'); // Rutas para los reportes de asistencia
 
 // Inicialización de la aplicación Express
 const app = express();
@@ -78,6 +79,24 @@ app.engine('.hbs', engine({
             if (!this._sections) this._sections = {};
             this._sections[name] = options.fn(this);
             return null;
+        },
+        // Helper para comparar igualdad
+        eq: function(a, b) {
+            return a === b;
+        },
+        or: function() {
+            return Array.prototype.slice.call(arguments, 0, -1).some(Boolean);
+        },
+        // Helper para obtener clase CSS del badge según categoría
+        badgeClass: function(categoriaNombre) {
+            switch(categoriaNombre) {
+                case 'Entrada Normal': return 'bg-success';
+                case 'Salida Normal': return 'bg-primary';
+                case 'Salida Anticipada': return 'bg-warning';
+                case 'Atraso': return 'bg-danger';
+                case 'Inasistencia': return 'bg-dark';
+                default: return 'bg-secondary';
+            }
         }
     }
 }));
@@ -113,8 +132,10 @@ app.use('/', authRoutes); // Usa las rutas de autenticación para la raíz de la
 app.use('/', userRoutes); // Usa las rutas de usuario
 app.use('/', pdfRoutes);  // Usa las rutas de PDF
 app.use('/', asistenciaRoutes); // Usa las rutas de asistencia
-app.use('/', adminRoutes); // Usa las rutas de administración de usuarios
 app.use('/api', licenseRoutes); // Usa las rutas de licencias médicas con prefijo /api
+app.use('/reports', reportRoutes); // Usa las rutas de reportes con prefijo /reports
+app.use('/', adminRoutes); // Usa las rutas de administración de usuarios
+
 
 /**
  * Middleware para manejar rutas no encontradas (404)

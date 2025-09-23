@@ -7,6 +7,7 @@
 const express = require("express"); // Importa el framework Express para crear y gestionar rutas.
 const multer = require("multer"); // Importa Multer, un middleware para el manejo de `multipart/form-data`, usado para la subida de archivos.
 const { renderUpload, procesarPDF, renderPdfView } = require("../controllers/pdfController.js"); // Importa las funciones del controlador de PDF.
+const { verifyToken } = require('../middlewares/authMiddleware');
 
 const router = express.Router(); // Crea una nueva instancia de un router de Express.
 const upload = multer({ dest: "uploads/" }); // Configura Multer para guardar los archivos subidos en la carpeta "uploads/".
@@ -20,7 +21,7 @@ const upload = multer({ dest: "uploads/" }); // Configura Multer para guardar lo
  * @description Muestra el formulario para subir una justificación de inasistencia.
  * La vista es renderizada por `pdfController.renderUpload`.
  */
-router.get("/inasistencia", renderUpload);
+router.get("/inasistencia", verifyToken, renderUpload);
 
 // Las siguientes rutas están comentadas, pero muestran cómo se procesaría la subida de un PDF para inasistencias.
 // router.post("/inasistencia", upload.single("pdfFile"), procesarPDF);
@@ -34,7 +35,7 @@ router.get("/inasistencia", renderUpload);
  * @description Muestra el formulario para subir una licencia médica.
  * La vista es renderizada por `pdfController.renderPdfView`.
  */
-router.get("/licencia_medica", renderPdfView);
+router.get("/licencia_medica", verifyToken, renderPdfView);
 
 // Las siguientes rutas están comentadas, pero muestran cómo se procesaría la subida de un PDF para licencias médicas.
 // router.post("/licencia_medica", upload.single("pdfFile"), procesarPDF);

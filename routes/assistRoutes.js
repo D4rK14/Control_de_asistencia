@@ -6,23 +6,28 @@
  */
 const express = require('express'); // Importa el framework Express para crear y gestionar rutas.
 const router = express.Router(); // Crea una nueva instancia de un router de Express.
-const asistenciaController = require('../controllers/assistController'); // Importa el controlador de asistencia que contiene la lógica de negocio.
+const { registrarAsistencia, misAsistencias, getMisAsistenciasByUserId, autoMarkHolidayAttendance } = require('../controllers/assistController'); // Importa el controlador de asistencia que contiene la lógica de negocio.
+const { verifyToken, authorizeRole } = require('../middlewares/authMiddleware'); // Importar authorizeRole
 
 /**
- * @route POST /asistencia/:id
- * @description Ruta para registrar la entrada o salida de asistencia de un usuario.
- * Requiere el ID del usuario como un parámetro en la URL.
- * La lógica de procesamiento es manejada por `asistenciaController.registrarAsistencia`.
+ * Rutas de Asistencia
  */
-router.post('/asistencia/:id', asistenciaController.registrarAsistencia);
 
-/**
- * @route GET /asistencia/mis-asistencias/:id
- * @description Ruta para obtener todos los registros de asistencia de un usuario específico.
- * Requiere el ID del usuario como un parámetro en la URL.
- * La lógica para obtener y devolver las asistencias es manejada por `asistenciaController.misAsistencias`.
- */
-router.get('/asistencia/mis-asistencias/:id', asistenciaController.misAsistencias);
+// Ruta para ver las asistencias personales de un usuario (protegida por JWT)
+router.get('/asistencia/mis-asistencias/:id', verifyToken, misAsistencias); // Corregido
+
+// Ruta para registrar la entrada/salida de asistencia (protegida por JWT)
+router.post('/asistencia/registrar/:id', verifyToken, registrarAsistencia); // Corregido
+
+// Ruta para el marcado automático de asistencia en feriados (SOLO PARA PRUEBAS)
+router.get('/mark-holidays', verifyToken, authorizeRole(['administrador']), async (req, res) => {
+    const result = await autoMarkHolidayAttendance();
+    if (result.success) {
+        res.status(200).json({ message: result.message });
+    } else {
+        res.status(500).json({ error: result.message, details: result.error });
+    }
+});
 
 // Exporta el router para que pueda ser utilizado por la aplicación principal (app.js).
 module.exports = router;
