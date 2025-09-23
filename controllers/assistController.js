@@ -7,9 +7,11 @@
 
 // Importación de modelos de Sequelize
 const Asistencia = require('../models/assist'); // Modelo de Asistencia
-const User = require('../models/User'); // Modelo de Usuario
+const User = require('../models/User'); // Importar el modelo User
 const EstadoAsistencia = require('../models/StateAssist'); // Modelo de Estado de Asistencia
 const CategoriaAsistencia = require('../models/assistCategory'); // Modelo de Categoría de Asistencia
+const moment = require('moment-timezone'); // Asegurarse de que moment esté importado si no lo está
+const { isHoliday } = require('../helpers/holidayUtils'); // Importar la función isHoliday
 
 /**
  * @function determinarCategoriaAsistencia
@@ -51,11 +53,15 @@ const registrarAsistencia = async (req, res) => {
     const { tipo } = req.body;
     const id_usuario = req.params.id;
 
-    // Fecha local en YYYY-MM-DD
     const hoy = new Date();
-    const fechaFormateada = hoy.getFullYear() + '-' +
-                             String(hoy.getMonth() + 1).padStart(2, '0') + '-' +
-                             String(hoy.getDate()).padStart(2, '0');
+    const fechaFormateada = moment(hoy).format('YYYY-MM-DD'); // Usar moment para formatear la fecha
+
+    // === Nueva lógica: Verificar si es día feriado ===
+    const esFeriado = await isHoliday(fechaFormateada);
+    if (esFeriado) {
+        return res.status(400).json({ error: 'No se puede registrar asistencia en un día feriado.' });
+    }
+    // =================================================
 
     let asistencia = await Asistencia.findOne({
       where: { id_usuario, fecha: fechaFormateada }
@@ -64,7 +70,7 @@ const registrarAsistencia = async (req, res) => {
     if (tipo === 'entrada') {
       if (asistencia) return res.status(400).json({ error: 'Ya registraste tu entrada hoy.' });
 
-      const horaActual = new Date().toLocaleTimeString('es-CL', { hour12: false });
+      const horaActual = moment().tz('America/Santiago').format('HH:mm:ss'); // Usar moment para hora
       const idCategoria = determinarCategoriaAsistencia('entrada', horaActual);
 
       asistencia = await Asistencia.create({
@@ -82,11 +88,11 @@ const registrarAsistencia = async (req, res) => {
       if (!asistencia) return res.status(400).json({ error: 'No has marcado entrada aún.' });
       if (asistencia.hora_salida) return res.status(400).json({ error: 'Ya registraste tu salida hoy.' });
 
-      const horaActual = new Date().toLocaleTimeString('es-CL', { hour12: false });
+      const horaActual = moment().tz('America/Santiago').format('HH:mm:ss'); // Usar moment para hora
       const idCategoria = determinarCategoriaAsistencia('salida', horaActual);
 
       asistencia.hora_salida = horaActual;
-      asistencia.id_categoria = idCategoria; // Actualizar la categoría basada en la salida
+      asistencia.id_categoria = idCategoria;
       await asistencia.save();
 
       return res.json({ message: 'Salida registrada con éxito', asistencia });
@@ -191,5 +197,58 @@ const getMisAsistenciasByUserId = async (id_usuario) => {
   }
 };
 
+// Función para el marcado automático de asistencia en días feriados
+const autoMarkHolidayAttendance = async () => {
+    try {
+        const hoy = moment().tz('America/Santiago').format('YYYY-MM-DD');
+
+        const esFeriado = await isHoliday(hoy);
+
+        if (esFeriado) {
+            console.log(`✅ ${hoy} es feriado. Marcando asistencia como 'Presente' para todos los trabajadores.`);
+
+            // Obtener todos los usuarios del sistema
+            const users = await User.findAll({ attributes: ['id'] });
+
+            const idEstadoPresente = 1; // Asumiendo que ID 1 es 'Presente' en EstadoAsistencia
+            const idCategoriaEntradaNormal = 1; // Asumiendo que ID 1 es 'Entrada Normal' en CategoriaAsistencia
+
+            for (const user of users) {
+                // Verificar si el usuario ya tiene una asistencia para hoy
+                let asistenciaExistente = await Asistencia.findOne({
+                    where: {
+                        id_usuario: user.id,
+                        fecha: hoy
+                    }
+                });
+
+                if (!asistenciaExistente) {
+                    // Si no hay asistencia, crear una como 'Presente'
+                    await Asistencia.create({
+                        id_usuario: user.id,
+                        fecha: hoy,
+                        hora_entrada: '00:00:00', // Hora simbólica para feriado, o se puede dejar null
+                        hora_salida: '00:00:00', // Hora simbólica para feriado, o se puede dejar null
+                        id_estado: idEstadoPresente,
+                        id_categoria: idCategoriaEntradaNormal
+                    });
+                    console.log(`- Asistencia marcada para el usuario ${user.id} como Presente (Feriado).`);
+                } else {
+                    console.log(`- El usuario ${user.id} ya tiene asistencia registrada para hoy.`);
+                }
+            }
+            console.log('Proceso de marcado automático de feriados finalizado.');
+            return { success: true, message: 'Asistencia marcada automáticamente para feriado.' };
+        } else {
+            console.log(`❌ ${hoy} no es feriado. No se requiere marcado automático.`);
+            return { success: false, message: 'Hoy no es feriado, no se requiere marcado automático.' };
+        }
+    } catch (error) {
+        console.error('Error en el marcado automático de asistencia en feriados:', error);
+        return { success: false, message: 'Error en el marcado automático de asistencia.', error: error.message };
+    }
+};
+
+
 // Exporta las funciones para que puedan ser utilizadas por las rutas de Express.
-module.exports = { registrarAsistencia, misAsistencias, getMisAsistenciasByUserId };
+module.exports = { registrarAsistencia, misAsistencias, getMisAsistenciasByUserId, autoMarkHolidayAttendance };
