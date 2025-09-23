@@ -27,6 +27,13 @@
             z-index: 1050;
         }
         .card-kpi { min-height: 100px; }
+        /* Posicionar botón Dev en la esquina superior derecha, debajo del header */
+        .dev-btn-top {
+            position: fixed;
+            top: 70px; /* justo debajo del navbar fijo */
+            right: 24px;
+            z-index: 1055;
+        }
     </style>
 </head>
 <body>
@@ -45,6 +52,32 @@
             </div>
         </div>
     </nav>
+        <!-- Botón Dev: aparece debajo del header, esquina superior derecha -->
+        <div class="dev-btn-top">
+                <button id="devOptionsBtn" class="btn btn-outline-secondary" type="button">Dev Options</button>
+        </div>
+        <!-- Modal para Dev Options (se coloca aquí para estar disponible en todas las vistas) -->
+        <div class="modal fade" id="devOptionsModal" tabindex="-1" aria-labelledby="devOptionsLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="devOptionsLabel">Opciones de desarrollador</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="dbModeSwitch">
+                            <label class="form-check-label" for="dbModeSwitch">Usar conexión Azure (ON) / Local (OFF)</label>
+                        </div>
+                        <p class="small text-muted mt-2">Cambio guardado en la sesión del navegador y usado por el servidor en runtime.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button id="saveDbModeBtn" type="button" class="btn btn-primary">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     {{{body}}}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
@@ -67,6 +100,69 @@
     setInterval(updateServerTime, 1000);
     updateServerTime(); // Llamada inicial
 </script>
+        <script>
+        // Inicializar comportamiento del modal y switch para Dev Options
+        (function(){
+            const devBtn = document.getElementById('devOptionsBtn');
+            const saveBtn = document.getElementById('saveDbModeBtn');
+            const switchEl = document.getElementById('dbModeSwitch');
+            let devModalEl = document.getElementById('devOptionsModal');
+            let devModal = null;
+
+            function ensureModal() {
+                if (!devModalEl) {
+                    devModalEl = document.getElementById('devOptionsModal');
+                }
+                if (devModalEl && !devModal) {
+                    devModal = new bootstrap.Modal(devModalEl);
+                }
+            }
+
+            devBtn && devBtn.addEventListener('click', () => {
+                ensureModal();
+                // Cargar estado actual desde servidor
+                fetch('/dev/db-mode').then(r => r.json()).then(j => {
+                    if (switchEl) switchEl.checked = j.mode === 'azure';
+                    devModal && devModal.show();
+                }).catch(() => {
+                    if (switchEl) switchEl.checked = false;
+                    devModal && devModal.show();
+                });
+            });
+
+            saveBtn && saveBtn.addEventListener('click', () => {
+                if (!switchEl) return alert('Switch no disponible');
+                const mode = switchEl.checked ? 'azure' : 'local';
+                fetch('/dev/db-mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode })
+                }).then(r => r.json()).then(j => {
+                    let msg = 'Modo guardado: ' + j.mode + '.';
+                    if (j.restart) msg += ' El servidor se reiniciará automáticamente para aplicar el cambio (dev).';
+                    else msg += ' Reinicie el servidor para aplicar el cambio.';
+                    // Mostrar mensaje; cuando el usuario presione Aceptar (alert es bloqueante), recargar la página.
+                    alert(msg);
+                    devModal && devModal.hide();
+                    try {
+                        if (j.restart) {
+                            // Si el servidor se va a reiniciar, esperar un momento para permitir que nodemon lo arranque
+                            setTimeout(() => { window.location.reload(); }, 1200);
+                        } else {
+                            // Recarga inmediata (equivalente a F5)
+                            window.location.reload();
+                        }
+                    } catch (e) {
+                        // Fallback silencioso
+                        console.warn('No se pudo recargar automáticamente:', e);
+                    }
+                }).catch(err => {
+                    alert('Error al guardar modo');
+                    console.error(err);
+                });
+            });
+        })();
+        </script>
     {{{_sections.scripts}}}
 </body>
 </html>

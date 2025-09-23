@@ -119,6 +119,46 @@ app.get('/api/time', (req, res) => {
     }
 });
 
+// Rutas de desarrollo para seleccionar el modo de DB (local/azure).
+// Nota: esto guarda la preferencia en la sesión y tambien actualiza process.env.DB_MODE.
+app.get('/dev/db-mode', (req, res) => {
+    const modeFromSession = req.session && req.session.dbMode;
+    const mode = modeFromSession || process.env.DB_MODE || 'local';
+    res.json({ mode });
+});
+
+app.post('/dev/db-mode', async (req, res) => {
+    const { mode } = req.body || {};
+    if (!mode || (mode !== 'local' && mode !== 'azure')) {
+        return res.status(400).json({ error: 'Modo inválido. Use "local" o "azure"' });
+    }
+    // Guardar en sesión para esta sesión de navegador
+    if (req.session) req.session.dbMode = mode;
+    try {
+        // Actualizar env var y sesión
+        process.env.DB_MODE = mode;
+        // Informar al cliente que el modo fue guardado
+        const payload = { mode, message: 'Modo guardado. Nota: los modelos se cargan al iniciar el servidor; se requiere reiniciar para aplicar el cambio.' };
+
+        // Si la app está en desarrollo (no production) intentamos salir para que herramientas como nodemon la reinicien automáticamente.
+        if (process.env.NODE_ENV !== 'production') {
+            res.json({ ...payload, restart: true });
+            // Dar tiempo a que la respuesta llegue antes de salir
+            setTimeout(() => {
+                console.log(`[dev/db-mode] Reiniciando proceso para aplicar DB_MODE=${mode}`);
+                process.exit(0);
+            }, 800);
+            return;
+        }
+
+        // En producción solo avisamos que es necesario reiniciar manualmente
+        res.json({ ...payload, restart: false });
+    } catch (err) {
+        console.error('Error re-inicializando DB:', err);
+        res.status(500).json({ error: 'No se pudo reconfigurar la conexión: ' + (err.message || err) });
+    }
+});
+
 // Ruta para renderizar una página de error en el dashboard. Se usa cuando hay problemas de acceso o datos.
 app.get('/dashboard_error', (req, res) => {
     res.render('common/dashboard_error');
