@@ -23,7 +23,7 @@
         </div>
     </div>
     
-    <!-- Reportes personales (la tabla existente) -->
+    <!-- Reportes personales -->
     <div class="card">
       <div class="card-header">
         <h5 class="mb-0">Historial de Asistencias</h5>
@@ -37,39 +37,32 @@
             <div class="col-md-12">
               <div class="form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" id="filter-all" checked>
-                <label class="form-check-label" for="filter-all">
-                  Todos
-                </label>
+                <label class="form-check-label" for="filter-all">Todos</label>
               </div>
+
               <div class="form-check form-check-inline">
                 <input class="form-check-input category-filter" type="checkbox" id="filter-entrada-normal" value="Entrada Normal" checked>
-                <label class="form-check-label" for="filter-entrada-normal">
-                  <span class="badge bg-success">Entrada Normal</span>
-                </label>
+                <label class="form-check-label"><span class="badge bg-success">Entrada Normal</span></label>
               </div>
               <div class="form-check form-check-inline">
                 <input class="form-check-input category-filter" type="checkbox" id="filter-salida-normal" value="Salida Normal" checked>
-                <label class="form-check-label" for="filter-salida-normal">
-                  <span class="badge bg-primary">Salida Normal</span>
-                </label>
+                <label class="form-check-label"><span class="badge bg-primary">Salida Normal</span></label>
               </div>
               <div class="form-check form-check-inline">
                 <input class="form-check-input category-filter" type="checkbox" id="filter-salida-anticipada" value="Salida Anticipada" checked>
-                <label class="form-check-label" for="filter-salida-anticipada">
-                  <span class="badge bg-warning">Salida Anticipada</span>
-                </label>
+                <label class="form-check-label"><span class="badge bg-warning">Salida Anticipada</span></label>
               </div>
               <div class="form-check form-check-inline">
                 <input class="form-check-input category-filter" type="checkbox" id="filter-atraso" value="Atraso" checked>
-                <label class="form-check-label" for="filter-atraso">
-                  <span class="badge bg-danger">Atraso</span>
-                </label>
+                <label class="form-check-label"><span class="badge bg-danger">Atraso</span></label>
               </div>
               <div class="form-check form-check-inline">
                 <input class="form-check-input category-filter" type="checkbox" id="filter-inasistencia" value="Inasistencia" checked>
-                <label class="form-check-label" for="filter-inasistencia">
-                  <span class="badge bg-dark">Inasistencia</span>
-                </label>
+                <label class="form-check-label"><span class="badge bg-dark">Inasistencia</span></label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input category-filter" type="checkbox" id="filter-atrasado-salida" value="atrasado y salida anticipada" checked>
+                <label class="form-check-label"><span class="badge bg-info">atrasado y salida anticipada</span></label>
               </div>
             </div>
           </div>
@@ -93,7 +86,14 @@
                 <td>{{this.hora_entrada}}</td>
                 <td>{{this.hora_salida}}</td>
                 <td>
-                  <span class="badge {{#if (eq this.categoria.nombre 'Entrada Normal')}}bg-success{{else if (eq this.categoria.nombre 'Salida Normal')}}bg-primary{{else if (eq this.categoria.nombre 'Salida Anticipada')}}bg-warning{{else if (eq this.categoria.nombre 'Atraso')}}bg-danger{{else if (eq this.categoria.nombre 'Inasistencia')}}bg-dark{{else}}bg-secondary{{/if}}">
+                  <span class="badge 
+                    {{#if (eq this.categoria.nombre 'Entrada Normal')}}bg-success
+                    {{else if (eq this.categoria.nombre 'Salida Normal')}}bg-primary
+                    {{else if (eq this.categoria.nombre 'Salida Anticipada')}}bg-warning
+                    {{else if (eq this.categoria.nombre 'Atraso')}}bg-danger
+                    {{else if (eq this.categoria.nombre 'Inasistencia')}}bg-dark
+                    {{else if (eq this.categoria.nombre 'atrasado y salida anticipada')}}bg-info
+                    {{else}}bg-secondary{{/if}}">
                     {{this.categoria.nombre}}
                   </span>
                 </td>
@@ -148,71 +148,56 @@
     const calendarEventsData = JSON.parse('{{{calendarEvents}}}');
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicialización del Calendario
+        // Inicialización del calendario
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             locale: 'es',
-            height: 500, // Ajustar a una altura fija, por ejemplo, 500px
+            height: 500,
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            events: calendarEventsData,
-            eventDidMount: function(info) {
-                // Personalizar tooltip (usando Bootstrap tooltips)
-                // if (info.event.extendedProps) {
-                //     const tooltip = new bootstrap.Tooltip(info.el, {
-                //         title: `Entrada: ${info.event.extendedProps.hora_entrada}\nSalida: ${info.event.extendedProps.hora_salida}\nEstado: ${info.event.extendedProps.estado_detalle}\nCategoría: ${info.event.extendedProps.categoria_detalle}`,
-                //         placement: 'top',
-                //         trigger: 'hover',
-                //         container: 'body',
-                //         html: true
-                //     });
-                // }
-            },
-            dateClick: function(info) {
-                // Puedes añadir una acción al hacer clic en una fecha
-                // alert('Día clicado: ' + info.dateStr);
-            }
+            events: calendarEventsData
         });
 
-        // Control programático del colapso del calendario
+        // Control del colapso del calendario
         var calendarCollapseElement = document.getElementById('calendarCollapse');
         var toggleCalendarBtn = document.getElementById('toggleCalendarBtn');
-        var calendarCollapse = new bootstrap.Collapse(calendarCollapseElement, {
-            toggle: false // Evita que se inicialice en un estado toggled
-        });
+        var calendarCollapse = new bootstrap.Collapse(calendarCollapseElement, { toggle: false });
 
         toggleCalendarBtn.addEventListener('click', function() {
-            calendarCollapse.toggle(); // Alterna la visibilidad
+            calendarCollapse.toggle();
         });
 
         calendarCollapseElement.addEventListener('shown.bs.collapse', function () {
-            calendar.render(); // Renderiza el calendario cuando el div es visible
-            toggleCalendarBtn.textContent = 'Ocultar Calendario'; // Cambia el texto del botón
+            calendar.render();
+            toggleCalendarBtn.textContent = 'Ocultar Calendario';
         });
         
         calendarCollapseElement.addEventListener('hidden.bs.collapse', function () {
-            toggleCalendarBtn.textContent = 'Ver Calendario'; // Cambia el texto del botón
+            toggleCalendarBtn.textContent = 'Ver Calendario';
         });
 
-        // Lógica de filtrado de asistencias (consolidada aquí)
+        // Filtrado de categorías
         const filterAll = document.getElementById('filter-all');
         const categoryFilters = document.querySelectorAll('.category-filter');
         const tableRows = document.querySelectorAll('#asistenciasTable tbody tr');
 
         function applyFilters() {
-            const selectedCategories = Array.from(categoryFilters)
-                .filter(checkbox => checkbox.checked)
-                .map(checkbox => checkbox.value);
+            const selectedCategories = new Set(Array.from(categoryFilters)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value));
 
             tableRows.forEach(row => {
                 const categoryCell = row.querySelector('td:nth-child(4) .badge');
                 if (categoryCell) {
                     const categoryName = categoryCell.textContent.trim();
-                    const shouldShow = selectedCategories.includes(categoryName);
+                    
+                    // La fila se muestra si su categoría está en el conjunto de categorías seleccionadas.
+                    const shouldShow = selectedCategories.has(categoryName);
+                    
                     row.style.display = shouldShow ? '' : 'none';
                 }
             });
@@ -220,25 +205,17 @@
 
         filterAll.addEventListener('change', function() {
             const isChecked = this.checked;
-            categoryFilters.forEach(checkbox => {
-                checkbox.checked = isChecked;
-            });
+            categoryFilters.forEach(cb => cb.checked = isChecked);
             applyFilters();
         });
 
-        categoryFilters.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                if (!this.checked) {
-                    filterAll.checked = false;
-                }
-                const allChecked = Array.from(categoryFilters).every(cb => cb.checked);
-                filterAll.checked = allChecked;
-                applyFilters();
-            });
-        });
+        categoryFilters.forEach(cb => cb.addEventListener('change', function() {
+            const allChecked = Array.from(categoryFilters).every(cb => cb.checked);
+            filterAll.checked = allChecked;
+            applyFilters();
+        }));
 
-        applyFilters(); // Aplicar filtros iniciales
+        applyFilters();
     });
   </script>
-  <script src="/js/dashboard_usuario.js"></script>
 </body>

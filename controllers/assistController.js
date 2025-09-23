@@ -83,10 +83,27 @@ const registrarAsistencia = async (req, res) => {
       if (asistencia.hora_salida) return res.status(400).json({ error: 'Ya registraste tu salida hoy.' });
 
       const horaActual = new Date().toLocaleTimeString('es-CL', { hour12: false });
-      const idCategoria = determinarCategoriaAsistencia('salida', horaActual);
+      const idCategoriaSalida = determinarCategoriaAsistencia('salida', horaActual);
+      const categoriaEntrada = asistencia.id_categoria;
+      let idCategoriaFinal = categoriaEntrada; // Por defecto, mantener la categoría de entrada
 
+      // Lógica para determinar la categoría final
+      if (categoriaEntrada === 4 && idCategoriaSalida === 3) {
+        // Si llegó tarde y se fue temprano, es "Atraso y Salida Anticipada"
+        idCategoriaFinal = 6;
+      } else if (categoriaEntrada === 1 && idCategoriaSalida === 3) {
+        // Si llegó a tiempo pero se fue temprano, es "Salida Anticipada"
+        idCategoriaFinal = 3;
+      } else if (categoriaEntrada === 4 && idCategoriaSalida === 2) {
+        // Si llegó tarde pero se fue a tiempo, sigue siendo "Atraso"
+        idCategoriaFinal = 4;
+      } else if (categoriaEntrada === 1 && idCategoriaSalida === 2) {
+        // Si llegó a tiempo y se fue a tiempo, es "Salida Normal"
+        idCategoriaFinal = 2;
+      }
+      
       asistencia.hora_salida = horaActual;
-      asistencia.id_categoria = idCategoria; // Actualizar la categoría basada en la salida
+      asistencia.id_categoria = idCategoriaFinal; // Actualizar la categoría final
       await asistencia.save();
 
       return res.json({ message: 'Salida registrada con éxito', asistencia });
@@ -111,42 +128,52 @@ const registrarAsistencia = async (req, res) => {
  */
 const misAsistencias = async (req, res) => {
   try {
-    const id_usuario = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL.
+    const id_usuario = req.params.id;
 
-    // Busca todas las asistencias del usuario, incluyendo información del estado y categoría de asistencia.
     const asistencias = await Asistencia.findAll({
-      where: { id_usuario }, // Filtra por el ID del usuario
+      where: { id_usuario },
       include: [
-        { model: EstadoAsistencia, as: 'estado' }, // Incluye la información del modelo EstadoAsistencia
-        { model: CategoriaAsistencia, as: 'categoria' } // Incluye la información del modelo CategoriaAsistencia
+        { model: EstadoAsistencia, as: 'estado' },
+        { model: CategoriaAsistencia, as: 'categoria' }
       ],
-      order: [['fecha', 'DESC']], // Ordena las asistencias por fecha de forma descendente
-      raw: false // Cambiar a false para mantener la estructura de objetos anidados
+      order: [['fecha', 'DESC']],
+      raw: false
     });
 
-    console.log('Asistencias obtenidas de Sequelize:', asistencias); // Debugging
+    const asistenciasFormateadas = asistencias.map(asistencia => {
+      let nombreCategoria = 'Sin categoría';
 
-    // Mapear los resultados para ajustar el formato al esperado por el frontend
-    const asistenciasFormateadas = asistencias.map(asistencia => ({
-      fecha: asistencia.fecha,
-      hora_entrada: asistencia.hora_entrada,
-      hora_salida: asistencia.hora_salida || '-',
-      tipo_asistencia: asistencia.categoria ? asistencia.categoria.nombre : 'Sin categoría',
-      documento: asistencia.documento || '-',
-      categoria: asistencia.categoria ? {
-        id: asistencia.categoria.id,
-        nombre: asistencia.categoria.nombre,
-        descripcion: asistencia.categoria.descripcion
-      } : null
-    }));
+      if (asistencia.categoria) {
+        // Mostrar las categorías existentes
+        if ([1,2,3,4,6].includes(asistencia.categoria.id)) {
+          nombreCategoria = asistencia.categoria.nombre;
+        } else {
+          nombreCategoria = asistencia.categoria.nombre;
+        }
+      }
 
-    res.json(asistenciasFormateadas); // Envía las asistencias encontradas como respuesta JSON.
+      return {
+        fecha: asistencia.fecha,
+        hora_entrada: asistencia.hora_entrada,
+        hora_salida: asistencia.hora_salida || 'no marcada',
+        tipo_asistencia: nombreCategoria,
+        documento: asistencia.documento || '-',
+        categoria: asistencia.categoria ? {
+          id: asistencia.categoria.id,
+          nombre: asistencia.categoria.nombre,
+          descripcion: asistencia.categoria.descripcion
+        } : null
+      };
+    });
+
+    res.json(asistenciasFormateadas);
 
   } catch (error) {
-    console.error('Error al obtener asistencias:', error); // Registra el error en la consola del servidor.
-    res.status(500).json({ error: 'Error al obtener asistencias' }); // Envía una respuesta de error al cliente.
+    console.error('Error al obtener asistencias:', error);
+    res.status(500).json({ error: 'Error al obtener asistencias' });
   }
 };
+
 
 /**
  * @function getMisAsistenciasByUserId
@@ -174,7 +201,7 @@ const getMisAsistenciasByUserId = async (id_usuario) => {
     const asistenciasFormateadas = asistencias.map(asistencia => ({
       fecha: asistencia.fecha,
       hora_entrada: asistencia.hora_entrada,
-      hora_salida: asistencia.hora_salida || null,
+      hora_salida: asistencia.hora_salida || 'no marcada',
       tipo_asistencia: asistencia.categoria ? asistencia.categoria.nombre : 'Sin categoría',
       documento: asistencia.documento || null,
       categoria: asistencia.categoria ? {
