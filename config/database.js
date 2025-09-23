@@ -25,5 +25,7 @@ const sequelize = new Sequelize(
   }
 );
 
+console.log(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, process.env.DB_HOST);
+
 // Exporta la instancia de Sequelize para que pueda ser utilizada en otros módulos de la aplicación (ej: para definir modelos).
 module.exports = sequelize;
