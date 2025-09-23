@@ -49,15 +49,15 @@ router.get("/dashboard", verifyToken, (req, res) => {
  * - `authorizeRole`: Restringe el acceso solo a usuarios con roles específicos (Marketing, Finanzas, Administrador).
  * La vista es renderizada por `userController.renderDashboard`.
  */
-router.get("/dashboard_usuario", verifyToken, renderUserDashboard);
+router.get("/dashboard_usuario", verifyToken, authorizeRole(['Administrador', 'Marketing', 'Finanzas', 'RR.HH']), renderUserDashboard);
 
 /**
  * @route GET /reportes_usuario
  * @description Muestra la vista dedicada de reportes personales para un usuario autenticado.
  * Esta ruta está protegida por `verifyToken` para asegurar que solo usuarios autenticados accedan.
- * La vista es renderizada por `userController.renderUserReports`.
+ * La vista es renderizada por `userController.renderUserReports` (y también debería permitir RR.HH).
  */
-router.get("/reportes_usuario", verifyToken, renderUserReports);
+router.get("/reportes_usuario", verifyToken, authorizeRole(['Administrador', 'Marketing', 'Finanzas', 'RR.HH']), renderUserReports); // También añadir autorización aquí
 
 // Exporta el router para que pueda ser utilizado por la aplicación principal (app.js).
 module.exports = router;

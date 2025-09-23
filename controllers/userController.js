@@ -12,6 +12,8 @@ const Asistencia = require('../models/assist'); // Importar el modelo Asistencia
 const EstadoAsistencia = require('../models/StateAssist'); // Importar el modelo EstadoAsistencia
 const CategoriaAsistencia = require('../models/assistCategory'); // Importar el modelo CategoriaAsistencia
 const moment = require('moment-timezone'); // Para formatear fechas
+// const fetch = require('node-fetch'); // Ya no es necesario aquí
+const { getChileanHolidays } = require('../helpers/holidayUtils'); // Importar desde el nuevo archivo
 
 /**
  * @function renderHome
@@ -171,6 +173,11 @@ const renderUserReports = async (req, res) => {
         };
     });
 
+    // Obtener feriados para el año actual y añadirlos a los eventos del calendario
+    const currentYear = moment().year();
+    const chileanHolidays = await getChileanHolidays(currentYear); // Usar la función importada
+    calendarEvents.push(...chileanHolidays); // Añadir feriados a la lista de eventos
+
     res.render("common/reportes_usuario", {
       usuario: { ...req.user, isAdmin: req.user.rol === 'Administrador' },
       asistencias: plainAsistencias, // Pasar los objetos planos a la tabla
@@ -183,6 +190,28 @@ const renderUserReports = async (req, res) => {
     res.status(500).render("common/dashboard_error", { message: "Error al cargar los reportes." });
   }
 };
+
+// Función para obtener feriados de feriados.cl (ELIMINAR ESTA FUNCIÓN DE AQUÍ)
+// const getChileanHolidays = async (year = moment().year()) => {
+//     try {
+//         const response = await fetch(`https://api.feriados.cl/api/feriados/${year}`);
+//         if (!response.ok) {
+//             throw new Error(`Error al obtener feriados: ${response.statusText}`);
+//         }
+//         const data = await response.json();
+//         return data.data.map(holiday => ({
+//             title: holiday.nombre,
+//             start: holiday.fecha,
+//             backgroundColor: '#007bff', // Color para feriados
+//             borderColor: '#007bff',
+//             allDay: true
+//             // Puedes añadir más propiedades si FullCalendar las usa, como extendedProps para tooltips
+//         }));
+//     } catch (error) {
+//         console.error('Error al obtener los feriados de Chile:', error);
+//         return [];
+//     }
+// };
 
 // Exporta las funciones del controlador para que puedan ser utilizadas por los routers de Express.
 module.exports = {
