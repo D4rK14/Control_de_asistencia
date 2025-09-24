@@ -8,13 +8,14 @@
 const express = require("express"); // Importa el framework Express para crear y gestionar rutas.
 const { verifyToken, authorizeRole } = require("../middlewares/authMiddleware.js"); // Importa los middlewares de autenticación y autorización.
 const { renderAdminUserDashboard, getUsersAndRoles, getUserById, createUser, updateUser, deleteUser, changePassword } = require("../controllers/adminController.js"); // Importa las funciones del controlador de administración.
+const { renderAdminJustifications, getAllJustifications, updateJustificationStatus } = require("../controllers/justificationController.js");
 const { renderAdminDashboard } = require("../controllers/userController.js"); // Importa la función para renderizar el dashboard de administrador.
 
 const router = express.Router(); // Crea una nueva instancia de un router de Express.
 
 // Middleware para proteger todas las rutas de administración de usuarios.
 // Asegura que solo los usuarios autenticados con el rol de 'Administrador' puedan acceder a estas rutas.
-router.use(verifyToken, authorizeRole(['Administrador']));
+router.use(verifyToken, authorizeRole(['Administrador', 'RR.HH']));
 
 /**
  * @route GET /admin
@@ -71,6 +72,13 @@ router.delete("/admin/users/:id", deleteUser);
  * Requiere el ID del usuario como parámetro en la URL y oldPassword, newPassword en el cuerpo.
  */
 router.put("/admin/users/:id/change-password", changePassword);
+
+/**
+ * Rutas de Justificaciones (Admin)
+ */
+router.get('/admin/justificaciones', renderAdminJustifications);
+router.get('/api/admin/justificaciones', getAllJustifications);
+router.put('/api/admin/justificaciones/:id/estado', updateJustificationStatus);
 
 // Exporta el router para que pueda ser utilizado por la aplicación principal (app.js).
 module.exports = router;
