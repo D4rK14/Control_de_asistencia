@@ -3,13 +3,12 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-// Valores por defecto (Ethereal) - puedes sobrescribir con variables de entorno en .env
-const host = process.env.MAIL_HOST || 'smtp.ethereal.email';
-const port = process.env.MAIL_PORT ? parseInt(process.env.MAIL_PORT, 10) : 587;
-// Credenciales de tu cuenta Ethereal (puedes cambiarlas en .env)
-const user = process.env.MAIL_USER || 'jessika.morar@ethereal.email';
-const pass = process.env.MAIL_PASS || 'tgE5b7kxNcrmS5Aubn';
-const from = process.env.MAIL_FROM || `no-reply@ethereal.email`;
+// Las credenciales deben ser provistas a través de variables de entorno.
+const host = process.env.MAIL_HOST;
+const port = process.env.MAIL_PORT ? parseInt(process.env.MAIL_PORT, 10) : undefined;
+const user = process.env.MAIL_USER;
+const pass = process.env.MAIL_PASS;
+const from = process.env.MAIL_FROM;
 
 let transporter;
 try {
