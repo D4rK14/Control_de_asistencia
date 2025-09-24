@@ -28,13 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const rows = items.map(l => {
             const usuario = l.usuario ? `${l.usuario.nombre} ${l.usuario.apellido} (${l.usuario.rut || ''})` : `ID ${l.id_usuario}`;
-            const select = `<select class="form-select form-select-sm estado-select" data-id="${l.id}">${ESTADOS.map(e => `<option value="${e}" ${e === l.estado ? 'selected' : ''}>${e}</option>`).join('')}</select>`;
+            
+            const isOwnLicense = window.currentUser && l.usuario && l.usuario.id === window.currentUser.id;
+            const disabledAttr = isOwnLicense ? 'disabled' : '';
+
+            const select = `<select class="form-select form-select-sm estado-select" data-id="${l.id}" ${disabledAttr}>${ESTADOS.map(e => `<option value="${e}" ${e === l.estado ? 'selected' : ''}>${e}</option>`).join('')}</select>`;
             return `<tr>
                 <td>${usuario}</td>
                 <td>${select}</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-secondary me-1 btn-ver" data-id="${l.id}"><i class="fa-solid fa-eye"></i> Ver</button>
-                    <button class="btn btn-sm btn-primary btn-guardar" data-id="${l.id}"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+                    <button class="btn btn-sm btn-primary btn-guardar" data-id="${l.id}" ${disabledAttr}><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </td>
             </tr>`;
         }).join('');

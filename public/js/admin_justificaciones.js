@@ -25,7 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const rows = items.map(j => {
             const usuario = j.usuario ? `${j.usuario.nombre} ${j.usuario.apellido} (${j.usuario.rut || ''})` : `ID ${j.id_usuario}`;
             const archivo = j.archivo ? `<a href="/uploads/${encodeURIComponent(j.archivo)}" target="_blank">Ver</a>` : '<span class="text-muted">N/A</span>';
-            const select = `<select class="form-select form-select-sm estado-select" data-id="${j.id}">
+            
+            const isOwnJustification = window.currentUser && j.usuario && j.usuario.id === window.currentUser.id;
+            const disabledAttr = isOwnJustification ? 'disabled' : '';
+
+            const select = `<select class="form-select form-select-sm estado-select" data-id="${j.id}" ${disabledAttr}>
                 ${ESTADOS.map(e => `<option value="${e}" ${e === j.estado ? 'selected' : ''}>${e}</option>`).join('')}
             </select>`;
             const fechaSolicitud = j.fecha_solicitud ? new Date(j.fecha_solicitud).toLocaleString() : '';
@@ -42,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${archivo}</td>
                 <td>${select}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-primary btn-guardar" data-id="${j.id}"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+                    <button class="btn btn-sm btn-primary btn-guardar" data-id="${j.id}" ${disabledAttr}><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
                 </td>
             </tr>`;
         }).join('');

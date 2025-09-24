@@ -6,6 +6,7 @@
 
 const Justificacion = require('../models/justification');
 const User = require('../models/User');
+const Rol = require('../models/Rol'); // Added Rol model import
 
 /**
  * Renderiza la vista de administración de justificaciones.
@@ -49,10 +50,27 @@ const updateJustificationStatus = async (req, res) => {
     }
 
     try {
-        const justificacion = await Justificacion.findByPk(id);
+        const justificacion = await Justificacion.findByPk(id, {
+            include: [{
+                model: User,
+                as: 'usuario',
+                include: [{ model: Rol, as: 'rol' }]
+            }]
+        });
         if (!justificacion) {
             return res.status(404).json({ error: 'Justificación no encontrada.' });
         }
+
+        // Verificar si el usuario logueado está intentando editar su propia justificación
+        if (req.user && justificacion.id_usuario === req.user.id) {
+            return res.status(403).json({ error: 'No puedes modificar el estado de tu propia justificación.' });
+        }
+
+        // NUEVA REGLA: RR.HH. no puede cambiar el estado de la justificación de un Administrador
+        if (req.user && req.user.rol === 'RR.HH.' && justificacion.usuario && justificacion.usuario.rol.nombre === 'Administrador') {
+            return res.status(403).json({ error: 'No tienes permiso para modificar la justificación de un administrador.' });
+        }
+
         justificacion.estado = estado;
         await justificacion.save();
         res.json({ message: 'Estado actualizado correctamente.', justificacion });

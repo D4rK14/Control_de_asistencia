@@ -39,6 +39,12 @@ const updateLicenseStatus = async (req, res) => {
     try {
         const licencia = await LicenciaMedica.findByPk(id);
         if (!licencia) return res.status(404).json({ error: 'Licencia no encontrada.' });
+
+        // Verificar si el usuario logueado está intentando editar su propia licencia
+        if (req.user && licencia.id_usuario === req.user.id) {
+            return res.status(403).json({ error: 'No puedes modificar el estado de tu propia licencia.' });
+        }
+
         licencia.estado = estado;
         await licencia.save();
         res.json({ message: 'Estado actualizado', licencia });
