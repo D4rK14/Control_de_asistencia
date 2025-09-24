@@ -121,7 +121,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // Obtener elementos del botón/estado para mostrar loading
+      const submitBtn = document.getElementById('createUserSubmitBtn');
+      const spinner = document.getElementById('createUserBtnSpinner');
+      const btnText = document.getElementById('createUserBtnText');
+
       try {
+        // Mostrar spinner y deshabilitar botón
+        if (submitBtn) submitBtn.disabled = true;
+        if (spinner) spinner.classList.remove('d-none');
+        if (btnText) btnText.textContent = 'Creando...';
+
         const response = await fetch('/admin/users', {
           method: 'POST',
           headers: {
@@ -133,7 +143,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await response.json();
 
         if (response.ok) {
-          Swal.fire('¡Éxito!', result.message, 'success');
+          // Mostrar mensaje principal
+          let note = result.message;
+          // Añadir información sobre el envío de correo
+          if (typeof result.mailSent !== 'undefined') {
+            if (result.mailSent) {
+              note += '\n\nCorreo de credenciales enviado al usuario.';
+            } else {
+              note += '\n\nNo se pudo enviar el correo de credenciales. Revise la configuración del servidor de correo.';
+            }
+          }
+
+          // Si existe una URL de preview (Ethereal), ofrecer abrirla
+          if (result.mailPreviewUrl) {
+            Swal.fire({
+              title: '¡Éxito!',
+              text: note,
+              icon: 'success',
+              showCancelButton: true,
+              confirmButtonText: 'Abrir preview del correo',
+              cancelButtonText: 'Cerrar'
+            }).then((r) => {
+              if (r.isConfirmed) {
+                window.open(result.mailPreviewUrl, '_blank');
+              }
+            });
+          } else {
+            Swal.fire('¡Éxito!', note, result.mailSent ? 'success' : 'warning');
+          }
           createUserForm.reset();
           createUserModal.hide();
           loadUsers(); // Recargar la tabla
@@ -143,6 +180,11 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         console.error('Error al crear usuario:', error);
         Swal.fire('Error', 'Error de conexión al crear usuario', 'error');
+      } finally {
+        // Ocultar spinner y volver a habilitar botón
+        if (spinner) spinner.classList.add('d-none');
+        if (btnText) btnText.textContent = 'Guardar Usuario';
+        if (submitBtn) submitBtn.disabled = false;
       }
     });
   }

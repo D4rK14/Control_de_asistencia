@@ -9,6 +9,7 @@
 const User = require('../models/User'); // Importa el modelo User para interactuar con la tabla de usuarios.
 const Rol = require('../models/Rol');   // Importa el modelo Rol para poder asociar usuarios a roles y mostrarlos.
 const bcrypt = require('bcryptjs');     // Importa bcryptjs para encriptar contraseñas de forma segura.
+const { transporter, from } = require('../config/mailer'); // Transporter para envío de correos
 
 /**
  * @function _fetchUsersAndRolesData
@@ -129,7 +130,47 @@ const createUser = async (req, res) => {
             password: hashedPassword,
             id_rol
         });
-        res.status(201).json({ message: 'Usuario creado con éxito', user: newUser });
+
+        // Intentar enviar correo con credenciales (no bloquear la creación si falla el envío)
+        let mailSent = false;
+        if (transporter && correo) {
+            const mailOptions = {
+                from: from,
+                to: correo,
+                subject: 'Credenciales creadas - Sistema de Asistencia',
+                text: `Se han creado sus credenciales de acceso.\n\nRUT: ${rut}\nContraseña: ${password}\n\nPor favor, cambie su contraseña después del primer ingreso.`,
+                html: `<p>Se han creado sus credenciales de acceso.</p>
+                       <p><strong>RUT:</strong> ${rut}</p>
+                       <p><strong>Contraseña:</strong> ${password}</p>
+                       <p>Por favor, cambie su contraseña después del primer ingreso.</p>`
+            };
+
+                try {
+                    const info = await transporter.sendMail(mailOptions);
+                    console.log('Correo de bienvenida enviado:', info && info.response ? info.response : info);
+                    mailSent = true;
+                    // Si es Ethereal, obtener URL de previsualización
+                    if (typeof require('nodemailer').getTestMessageUrl === 'function') {
+                        try {
+                            const preview = require('nodemailer').getTestMessageUrl(info);
+                            if (preview) {
+                                mailPreviewUrl = preview;
+                            }
+                        } catch (errPreview) {
+                            console.warn('No se pudo obtener URL de preview de Ethereal:', errPreview && errPreview.message ? errPreview.message : errPreview);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error enviando correo de bienvenida:', err);
+                    mailSent = false;
+                }
+        } else {
+            console.warn('Transporter de correo no configurado o correo destino vacío; no se envió correo.');
+        }
+
+    const resp = { message: 'Usuario creado con éxito,', user: newUser, mailSent };
+    if (mailPreviewUrl) resp.mailPreviewUrl = mailPreviewUrl;
+    res.status(201).json(resp);
     } catch (error) {
         console.error("Error al crear usuario:", error);
         res.status(500).json({ error: 'Error al crear el usuario.', details: error.message });

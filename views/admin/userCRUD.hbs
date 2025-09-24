@@ -104,7 +104,10 @@
                             <!-- Los roles se cargarán dinámicamente aquí mediante JavaScript -->
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-success">Guardar Usuario</button>
+                    <button type="submit" class="btn btn-success" id="createUserSubmitBtn">
+                        <span id="createUserBtnSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+                        <span id="createUserBtnText">Guardar Usuario</span>
+                    </button>
                 </form>
             </div>
         </div>

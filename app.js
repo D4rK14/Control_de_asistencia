@@ -152,7 +152,14 @@ app.use((req, res) => {
  * Sincronización con la base de datos y levantamiento del servidor
  * Antes de iniciar el servidor, se asegura de que los modelos de Sequelize estén sincronizados con la DB.
  */
-sequelize.sync({ alter: true }).then(() => {
+// Control del comportamiento de sincronización: por seguridad NO ejecutar 'alter' por defecto.
+// Establece la variable de entorno SYNC_ALTER='true' SOLO si quieres que Sequelize intente modificar el esquema automáticamente.
+const syncAlter = process.env.SYNC_ALTER === 'true';
+
+const syncOptions = syncAlter ? { alter: true } : {};
+
+sequelize.sync(syncOptions).then(() => {
+    console.log(`Sequelize sync ejecutado con opciones: ${JSON.stringify(syncOptions)}`);
     app.listen(PORT, () => {
         console.log(`Servidor escuchando en http://localhost:${PORT}`);
     });
