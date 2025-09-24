@@ -6,6 +6,7 @@
  */
 const express = require("express"); // Importa el framework Express para crear y gestionar rutas.
 const { renderHome, renderUserDashboard, renderAdminDashboard, renderUserReports } = require("../controllers/userController.js"); // Importa las funciones del controlador de usuarios.
+const { generateUserQrLogin } = require("../controllers/userController.js"); // Importa la nueva función de generación de QR de login
 const {verifyToken, authorizeRole} = require("../middlewares/authMiddleware.js"); // Importa los middlewares de autenticación y autorización.
 
 const router = express.Router(); // Crea una nueva instancia de un router de Express.
@@ -58,6 +59,13 @@ router.get("/dashboard_usuario", verifyToken, authorizeRole(['Administrador', 'M
  * La vista es renderizada por `userController.renderUserReports` (y también debería permitir RR.HH).
  */
 router.get("/reportes_usuario", verifyToken, authorizeRole(['Administrador', 'Marketing', 'Finanzas', 'RR.HH']), renderUserReports); // También añadir autorización aquí
+
+/**
+ * @route GET /generate-qr-login
+ * @description Genera y devuelve el código QR estático de login para el usuario autenticado.
+ * Protegido por `verifyToken`.
+ */
+router.get("/generate-qr-login", verifyToken, generateUserQrLogin);
 
 // Exporta el router para que pueda ser utilizado por la aplicación principal (app.js).
 module.exports = router;

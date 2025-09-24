@@ -50,6 +50,12 @@ const User = sequelize.define('users', {
         type: DataTypes.STRING,
         allowNull: false // No permite valores nulos, la contraseña es obligatoria.
     },
+    // Secreto único para el login con QR.
+    qr_login_secret: {
+        type: DataTypes.STRING,
+        allowNull: true, // Permitir nulos temporalmente para la alteración de la tabla
+        unique: true // Cada secreto debe ser único
+    },
     // Clave foránea que referencia al ID del rol del usuario. Define el nivel de acceso y permisos.
     id_rol: {
         type: DataTypes.INTEGER,

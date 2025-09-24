@@ -11,6 +11,7 @@ const jwt = require("jsonwebtoken");          // JSON Web Token: Utilizado para 
 const bcrypt = require("bcryptjs");           // Bcryptjs: Librería para encriptar y comparar contraseñas de forma segura (hashing).
 const User = require("../models/User");       // Modelo de Usuario: Representa la tabla de usuarios en la base de datos.
 const Rol = require("../models/Rol");         // Modelo de Rol: Representa la tabla de roles de usuario en la base de datos.
+const { v4: uuidv4 } = require('uuid'); // Importar uuid para generar IDs únicos
 const { isAccessBlockedNow, msUntilNext22 } = require('../helpers/accessTime');
 
 // Obtención de las claves secretas para la firma de tokens desde variables de entorno.
@@ -18,7 +19,7 @@ const { isAccessBlockedNow, msUntilNext22 } = require('../helpers/accessTime');
 // Se recomienda usar herramientas como Dotenvx para gestionar estas variables de forma segura.
 const JWT_SECRET = process.env.JWT_SECRET; // Clave para firmar el token de acceso (vida corta).
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET; // Clave para firmar el token de refresco (vida más larga).
-const JWT_QR_SECRET = process.env.JWT_QR_SECRET || 'super_secreto_para_qrs_seguros'; // Clave para firmar los JWT de QR
+// const JWT_QR_SECRET = process.env.JWT_QR_SECRET || 'super_secreto_para_qrs_seguros'; // Ya no se usará JWT para QR de login
 
 /**
  * @function generateAccessToken
@@ -88,8 +89,8 @@ const renderLogin = (req, res) => {
 /**
  * @function loginWithQr
  * @description Controlador para procesar el inicio de sesión de un usuario mediante código QR.
- * Verifica el token JWT enviado desde el QR, autentica al usuario y establece cookies de sesión.
- * @param {Object} req - Objeto de solicitud HTTP que contiene `qrCodeContent` en el cuerpo.
+ * Verifica el secreto del QR, autentica al usuario y establece cookies de sesión.
+ * @param {Object} req - Objeto de solicitud HTTP que contiene `qrCodeContent` (el secreto del QR) en el cuerpo.
  * @param {Object} res - Objeto de respuesta HTTP de Express.
  * @returns {Promise<void>} Envía una respuesta JSON indicando el éxito o fracaso y redirige al dashboard.
  */
@@ -100,27 +101,15 @@ const loginWithQr = async (req, res) => {
     return res.status(400).json({ error: 'Contenido del código QR es requerido.' });
   }
 
-  let userId;
   try {
-    const decoded = jwt.verify(qrCodeContent, JWT_QR_SECRET);
-    userId = decoded.userId;
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Código QR expirado. Por favor, genera uno nuevo.' });
-    }
-    console.error('Error verificando token JWT para login QR:', error);
-    return res.status(401).json({ error: 'Código QR inválido o no autorizado para iniciar sesión.' });
-  }
-
-  try {
-    // Buscar el usuario por el ID extraído del token QR
+    // Buscar el usuario por el qr_login_secret directamente
     const user = await User.findOne({
-      where: { id: userId },
+      where: { qr_login_secret: qrCodeContent },
       include: [{ model: Rol, as: 'rol' }]
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado.' });
+      return res.status(401).json({ error: 'Código QR inválido o no reconocido.' });
     }
 
     // Comprobar horario de acceso (similar al login normal)
@@ -265,10 +254,14 @@ const register = async (req, res) => {
         // Se utiliza un factor de costo (salt rounds) de 10 para una buena seguridad y rendimiento.
         const hashedPassword = bcrypt.hashSync(password, 10);
         
+        // Generar un secreto QR único para el usuario
+        const qrLoginSecret = uuidv4();
+
         // Crea un nuevo registro de usuario en la base de datos con el RUT y la contraseña encriptada.
         await User.create({ 
             rut, 
-            password: hashedPassword 
+            password: hashedPassword,
+            qr_login_secret: qrLoginSecret // Guardar el secreto QR
         });
         
         // Redirige al usuario a la página de login para que pueda iniciar sesión con sus nuevas credenciales.
