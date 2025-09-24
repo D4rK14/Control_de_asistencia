@@ -22,6 +22,7 @@ const asistenciaRoutes = require('./routes/assistRoutes'); // Rutas para el regi
 const adminRoutes = require('./routes/adminRoutes'); // Rutas para la administración de usuarios (CRUD)
 const licenseRoutes = require('./routes/licenseRoutes'); // Rutas para la gestión de licencias médicas
 const reportRoutes = require('./routes/reportRoutes'); // Rutas para los reportes de asistencia
+const qrRoutes = require('./routes/qrRoutes'); // Rutas para la generación de códigos QR
 
 // Inicialización de la aplicación Express
 const app = express();
@@ -135,7 +136,7 @@ app.use('/', asistenciaRoutes); // Usa las rutas de asistencia
 app.use('/api', licenseRoutes); // Usa las rutas de licencias médicas con prefijo /api
 app.use('/reports', reportRoutes); // Usa las rutas de reportes con prefijo /reports
 app.use('/', adminRoutes); // Usa las rutas de administración de usuarios
-
+app.use('/qr', qrRoutes); // Usa las rutas de QR con el prefijo /qr
 
 /**
  * Middleware para manejar rutas no encontradas (404)
