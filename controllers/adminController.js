@@ -9,7 +9,9 @@
 const User = require('../models/User'); // Importa el modelo User para interactuar con la tabla de usuarios.
 const Rol = require('../models/Rol');   // Importa el modelo Rol para poder asociar usuarios a roles y mostrarlos.
 const bcrypt = require('bcryptjs');     // Importa bcryptjs para encriptar contraseñas de forma segura.
+const { v4: uuidv4 } = require('uuid'); // Para generar secretos QR únicos
 const { transporter, from } = require('../config/mailer'); // Transporter para envío de correos
+const QRCode = require('qrcode'); // Para generar DataURL de códigos QR
 
 /**
  * @function _fetchUsersAndRolesData
@@ -128,7 +130,8 @@ const createUser = async (req, res) => {
             apellido,
             correo,
             password: hashedPassword,
-            id_rol
+                id_rol,
+                qr_login_secret: uuidv4() // Generar y guardar un secreto QR al crear el usuario
         });
 
         // Intentar enviar correo con credenciales (no bloquear la creación si falla el envío)
@@ -307,6 +310,49 @@ const changePassword = async (req, res) => {
     }
 };
 
+/**
+ * @function regenerateUserQrSecret
+ * @description Regenera el secreto QR de un usuario (uuid) y lo guarda en la DB.
+ * @param {Object} req
+ * @param {Object} res
+ */
+const regenerateUserQrSecret = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findByPk(id);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
+
+        user.qr_login_secret = uuidv4();
+        await user.save();
+
+        res.json({ message: 'Secreto QR regenerado con éxito.', qr_login_secret: user.qr_login_secret });
+    } catch (error) {
+        console.error('Error al regenerar secreto QR:', error);
+        res.status(500).json({ error: 'Error al regenerar secreto QR.', details: error.message });
+    }
+};
+
+/**
+ * @function generateQrForUser
+ * @description Genera un DataURL con el QR del secreto de login de un usuario (solo admins).
+ * @param {Object} req
+ * @param {Object} res
+ */
+const generateQrForUser = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findByPk(id);
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
+        if (!user.qr_login_secret) return res.status(400).json({ error: 'Usuario no tiene secreto QR configurado.' });
+
+        const dataUrl = await QRCode.toDataURL(user.qr_login_secret);
+        res.json({ dataUrl });
+    } catch (error) {
+        console.error('Error al generar QR para usuario:', error);
+        res.status(500).json({ error: 'Error al generar QR.', details: error.message });
+    }
+};
+
 // Exporta todas las funciones del controlador para que puedan ser utilizadas por las rutas de Express.
 module.exports = {
     renderAdminUserDashboard,
@@ -317,5 +363,7 @@ module.exports = {
     deleteUser,
     activateUser,
     changePassword,
+    regenerateUserQrSecret,
+    generateQrForUser,
     _fetchUsersAndRolesData // Exporta la función interna para que otros controladores puedan usarla.
 };

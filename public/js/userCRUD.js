@@ -75,10 +75,15 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${user['rol.nombre'] || '-'}</td>
           <td>${user.status === 'activo' ? 'Activo' : 'Desactivado'}</td>
           <td>
-            <!-- Celda separada para QR Login (botón solo debajo del título 'QR Login') -->
-            <button type="button" class="btn btn-info btn-sm view-qr-btn" data-qr-secret="${user.qr_login_secret || ''}">
-              Ver QR
-            </button>
+            <!-- Celda separada para QR Login (Ver + Regenerar) -->
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-info btn-sm view-qr-btn" data-qr-secret="${user.qr_login_secret || ''}">
+                Ver QR
+              </button>
+              <button type="button" class="btn btn-warning btn-sm regen-qr-btn" data-id="${user.id}" title="Regenerar secreto QR">
+                Regenerar QR
+              </button>
+            </div>
           </td>
           <td>
             <!-- Celda de acciones: Editar + Desactivar/Activar -->
@@ -352,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const row = target.closest('tr');
       const userName = row ? row.cells[2].textContent.trim() : 'Usuario';
 
-      if (target.classList.contains('delete-user-btn')) {
+  if (target.classList.contains('delete-user-btn')) {
         // Lógica para desactivar usuario
         if (window.currentUser && parseInt(userId) === window.currentUser.id) {
           Swal.fire('Acción no permitida', 'No puedes desactivar tu propia cuenta de usuario.', 'warning');
@@ -393,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
         });
-      } else if (target.classList.contains('activate-user-btn')) {
+  } else if (target.classList.contains('activate-user-btn')) {
         // Lógica para activar usuario
         Swal.fire({
           title: '¿Estás seguro?',
@@ -426,6 +431,33 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
               console.error('Error al activar usuario:', error);
               Swal.fire('Error', 'Error de conexión al activar usuario', 'error');
+            }
+          }
+        });
+      } else if (target.classList.contains('regen-qr-btn')) {
+        // Regenerar secreto QR
+        const userIdRegen = target.getAttribute('data-id');
+        Swal.fire({
+          title: 'Regenerar QR',
+          text: `¿Deseas regenerar el secreto QR para ${userName}? Esto invalidará el QR anterior.`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, regenerar',
+          cancelButtonText: 'Cancelar'
+        }).then(async (r) => {
+          if (r.isConfirmed) {
+            try {
+              const resp = await fetch(`/admin/users/${userIdRegen}/regen-qr`, { method: 'PUT' });
+              const json = await resp.json();
+              if (resp.ok) {
+                Swal.fire('Hecho', 'Secreto QR regenerado con éxito.', 'success');
+                loadUsers();
+              } else {
+                Swal.fire('Error', json.error || 'No se pudo regenerar el secreto QR', 'error');
+              }
+            } catch (err) {
+              console.error('Error al regenerar QR:', err);
+              Swal.fire('Error', 'Error de conexión al regenerar QR', 'error');
             }
           }
         });

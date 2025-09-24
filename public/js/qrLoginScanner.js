@@ -58,7 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 showLoginMessage('Inicio de sesión exitoso. Redireccionando...', false);
-                window.location.href = data.redirectUrl || '/dashboard'; // Redirigir al dashboard
+                // Espera 2 segundos para que el usuario vea el mensaje antes de redirigir
+                setTimeout(() => {
+                    window.location.href = data.redirectUrl || '/dashboard'; // Redirigir al dashboard
+                }, 2000);
             } else {
                 showLoginMessage(data.error || 'Error al iniciar sesión con QR', true);
             }
