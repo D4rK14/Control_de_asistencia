@@ -75,13 +75,19 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${user['rol.nombre'] || '-'}</td>
           <td>${user.status === 'activo' ? 'Activo' : 'Desactivado'}</td>
           <td>
-            <button type="button" class="btn btn-info btn-sm view-qr-btn me-2" data-qr-secret="${user.qr_login_secret || ''}">
+            <!-- Celda separada para QR Login (botón solo debajo del título 'QR Login') -->
+            <button type="button" class="btn btn-info btn-sm view-qr-btn" data-qr-secret="${user.qr_login_secret || ''}">
               Ver QR
             </button>
-            <button type="button" class="btn btn-primary btn-sm edit-user-btn me-2" data-id="${user.id}" data-bs-toggle="modal" data-bs-target="#editUserModal">
-              Editar
-            </button>
-            ${actionButton}
+          </td>
+          <td>
+            <!-- Celda de acciones: Editar + Desactivar/Activar -->
+            <div class="table-actions">
+              <button type="button" class="btn btn-primary btn-sm edit-user-btn" data-id="${user.id}" data-bs-toggle="modal" data-bs-target="#editUserModal">
+                Editar
+              </button>
+              ${actionButton}
+            </div>
           </td>
         `;
       });
