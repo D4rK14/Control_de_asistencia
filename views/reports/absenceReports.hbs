@@ -11,6 +11,7 @@
                 <div>
                     <!-- Botón volver a la vista anterior alineado con el título -->
                     <a href="/dashboard_usuario" class="btn btn-secondary"><i class="fa-solid fa-arrow-left me-2"></i>Volver</a>
+                    <button id="exportPdfBtn" class="btn btn-danger ms-2"><i class="fa-solid fa-file-pdf me-2"></i>Exportar PDF</button>
                 </div>
             </div>
         </div>
@@ -95,3 +96,18 @@
         </div>
     </div>
 </main>
+
+<script>
+    // Construye la URL de export respetando el filtro seleccionado en el formulario
+    (function(){
+        const exportBtn = document.getElementById('exportPdfBtn');
+        if (!exportBtn) return;
+        exportBtn.addEventListener('click', function(){
+            const select = document.getElementById('filterType');
+            const filter = select ? select.value : '';
+            const query = filter ? `?filterType=${encodeURIComponent(filter)}` : '';
+            // Abrir en nueva ventana para forzar descarga
+            window.open(`/reports/absence/export${query}`, '_blank');
+        });
+    })();
+</script>
