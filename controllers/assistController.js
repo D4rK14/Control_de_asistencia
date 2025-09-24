@@ -40,26 +40,24 @@ const determinarCategoriaAsistencia = (tipo, horaActual) => {
 };
 
 /**
- * @function registrarAsistencia
- * @description Registra la entrada o salida de asistencia de un usuario.
- * Esta función es accesible a través de una ruta POST y requiere el ID del usuario como parámetro en la URL
- * y el tipo de registro (entrada/salida) en el cuerpo de la petición.
- * @param {Object} req - Objeto de solicitud de Express (contiene parámetros, cuerpo, etc.)
- * @param {Object} res - Objeto de respuesta de Express
- * @returns {Promise<void>} Envía una respuesta JSON indicando el éxito o el fracaso del registro.
+ * @function processAttendanceInternal
+ * @description Procesa el registro de asistencia (entrada/salida) para un usuario.
+ * Esta función contiene la lógica central para registrar la asistencia, incluyendo la
+ * determinación de categorías y la verificación de feriados. Es reutilizable por diferentes
+ * interfaces de registro (manual, QR, etc.).
+ * @param {number} id_usuario - ID del usuario que registra la asistencia.
+ * @param {string} tipo - Tipo de marcaje ('entrada' o 'salida').
+ * @returns {Promise<Object>} Un objeto con el resultado del registro (éxito o error).
  */
-const registrarAsistencia = async (req, res) => {
+const processAttendanceInternal = async (id_usuario, tipo) => {
   try {
-    const { tipo } = req.body;
-    const id_usuario = req.params.id;
-
     const hoy = new Date();
-    const fechaFormateada = moment(hoy).format('YYYY-MM-DD'); // Usar moment para formatear la fecha
+    const fechaFormateada = moment(hoy).format('YYYY-MM-DD');
 
     // === Nueva lógica: Verificar si es día feriado ===
     const esFeriado = await isHoliday(fechaFormateada);
     if (esFeriado) {
-        return res.status(400).json({ error: 'No se puede registrar asistencia en un día feriado.' });
+      return { success: false, status: 400, message: 'No se puede registrar asistencia en un día feriado.' };
     }
     // =================================================
 
@@ -68,9 +66,9 @@ const registrarAsistencia = async (req, res) => {
     });
 
     if (tipo === 'entrada') {
-      if (asistencia) return res.status(400).json({ error: 'Ya registraste tu entrada hoy.' });
+      if (asistencia) return { success: false, status: 400, message: 'Ya registraste tu entrada hoy.' };
 
-      const horaActual = moment().tz('America/Santiago').format('HH:mm:ss'); // Usar moment para hora
+      const horaActual = moment().tz('America/Santiago').format('HH:mm:ss');
       const idCategoria = determinarCategoriaAsistencia('entrada', horaActual);
 
       asistencia = await Asistencia.create({
@@ -81,33 +79,27 @@ const registrarAsistencia = async (req, res) => {
         id_categoria: idCategoria
       });
 
-      return res.json({ message: 'Entrada registrada con éxito', asistencia });
+      return { success: true, status: 200, message: 'Entrada registrada con éxito', asistencia };
     }
 
     if (tipo === 'salida') {
-      if (!asistencia) return res.status(400).json({ error: 'No has marcado entrada aún.' });
-      if (asistencia.hora_salida) return res.status(400).json({ error: 'Ya registraste tu salida hoy.' });
+      if (!asistencia) return { success: false, status: 400, message: 'No has marcado entrada aún.' };
+      if (asistencia.hora_salida) return { success: false, status: 400, message: 'Ya registraste tu salida hoy.' };
 
-      const horaActual = moment().tz('America/Santiago').format('HH:mm:ss'); // Usar moment para hora
+      const horaActual = moment().tz('America/Santiago').format('HH:mm:ss');
       const idCategoriaSalida = determinarCategoriaAsistencia('salida', horaActual);
 
-      // Obtener la categoría que se registró en la entrada (si existe)
       const categoriaEntrada = asistencia.id_categoria ? Number(asistencia.id_categoria) : 1;
 
-      // Determinar categoría final combinando entrada/salida
-      let idCategoriaFinal = idCategoriaSalida; // por defecto tomar la calculada para la salida
+      let idCategoriaFinal = idCategoriaSalida;
 
       if (categoriaEntrada === 4 && idCategoriaSalida === 3) {
-        // Llegó tarde y se fue temprano -> Atraso y Salida Anticipada
         idCategoriaFinal = 6;
       } else if (categoriaEntrada === 1 && idCategoriaSalida === 3) {
-        // Llegó a tiempo pero se fue temprano -> Salida Anticipada
         idCategoriaFinal = 3;
       } else if (categoriaEntrada === 4 && idCategoriaSalida === 2) {
-        // Llegó tarde pero se fue a tiempo -> sigue siendo Atraso
         idCategoriaFinal = 4;
       } else if (categoriaEntrada === 1 && idCategoriaSalida === 2) {
-        // Llegó a tiempo y se fue a tiempo -> Salida Normal
         idCategoriaFinal = 2;
       }
 
@@ -115,17 +107,35 @@ const registrarAsistencia = async (req, res) => {
       asistencia.id_categoria = idCategoriaFinal;
       await asistencia.save();
 
-      return res.json({ message: 'Salida registrada con éxito', asistencia });
+      return { success: true, status: 200, message: 'Salida registrada con éxito', asistencia };
     }
 
-    return res.status(400).json({ error: 'Tipo inválido' });
-
+    return { success: false, status: 400, message: 'Tipo inválido' };
   } catch (error) {
-    console.error('Error al registrar asistencia:', error.stack || error);
-    // En desarrollo devolvemos más detalles para facilitar depuración; en producción ocultamos detalles.
-    const payload = { error: 'Error al registrar asistencia' };
-    if (process.env.NODE_ENV !== 'production') payload.details = error.message || String(error);
-    res.status(500).json(payload);
+    console.error('Error en processAttendanceInternal:', error.stack || error);
+    return { success: false, status: 500, message: 'Error interno del servidor al procesar asistencia', details: error.message };
+  }
+};
+
+/**
+ * @function registrarAsistencia
+ * @description Registra la entrada o salida de asistencia de un usuario.
+ * Esta función es accesible a través de una ruta POST y requiere el ID del usuario como parámetro en la URL
+ * y el tipo de registro (entrada/salida) en el cuerpo de la petición.
+ * @param {Object} req - Objeto de solicitud de Express (contiene parámetros, cuerpo, etc.)
+ * @param {Object} res - Objeto de respuesta de Express
+ * @returns {Promise<void>} Envía una respuesta JSON indicando el éxito o el fracaso del registro.
+ */
+const registrarAsistencia = async (req, res) => {
+  const { tipo } = req.body;
+  const id_usuario = req.params.id;
+
+  const result = await processAttendanceInternal(id_usuario, tipo);
+
+  if (result.success) {
+    return res.status(result.status).json({ message: result.message, asistencia: result.asistencia });
+  } else {
+    return res.status(result.status).json({ error: result.message, details: result.details });
   }
 };
 
@@ -284,4 +294,4 @@ const autoMarkHolidayAttendance = async () => {
 
 
 // Exporta las funciones para que puedan ser utilizadas por las rutas de Express.
-module.exports = { registrarAsistencia, misAsistencias, getMisAsistenciasByUserId, autoMarkHolidayAttendance };
+module.exports = { registrarAsistencia, misAsistencias, getMisAsistenciasByUserId, autoMarkHolidayAttendance, processAttendanceInternal };
