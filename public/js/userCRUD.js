@@ -48,9 +48,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Verificar si este usuario es el mismo que el usuario actual (administrador logueado)
         const isCurrentUser = window.currentUser && user.id === window.currentUser.id;
-        const deleteButtonDisabled = isCurrentUser ? 'disabled' : '';
-        const deleteButtonText = isCurrentUser ? 'No puedes eliminarte' : 'Eliminar';
-        const deleteButtonClass = isCurrentUser ? 'btn-secondary' : 'btn-danger';
+        
+        // Determinar el texto y la clase del botón de desactivar/eliminar
+        let actionButton = '';
+        if (user.status === 'activo') {
+            const deleteButtonDisabled = isCurrentUser ? 'disabled' : '';
+            actionButton = `
+                <button type="button" class="btn btn-danger btn-sm delete-user-btn" data-id="${user.id}" ${deleteButtonDisabled} title="${isCurrentUser ? 'No puedes desactivar tu propia cuenta' : 'Desactivar usuario'}">
+                  Desactivar
+                </button>
+            `;
+        } else { // user.status === 'desactivado'
+            actionButton = `
+                <button type="button" class="btn btn-success btn-sm activate-user-btn" data-id="${user.id}" title="Activar usuario">
+                  Activar
+                </button>
+            `;
+        }
 
         row.innerHTML = `
           <td>${user.id}</td>
@@ -58,17 +72,16 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${user.nombre || '-'}</td>
           <td>${user.apellido || '-'}</td>
           <td>${user.correo || '-'}</td>
-          <td>${user['rol.nombre'] || '-'}</td> <!-- Se modificó para acceder directamente a 'rol.nombre' -->
+          <td>${user['rol.nombre'] || '-'}</td>
+          <td>${user.status === 'activo' ? 'Activo' : 'Desactivado'}</td>
           <td>
             <button type="button" class="btn btn-info btn-sm view-qr-btn me-2" data-qr-secret="${user.qr_login_secret || ''}">
               Ver QR
             </button>
-            <button type="button" class="btn btn-primary btn-sm edit-user-btn" data-id="${user.id}" data-bs-toggle="modal" data-bs-target="#editUserModal">
+            <button type="button" class="btn btn-primary btn-sm edit-user-btn me-2" data-id="${user.id}" data-bs-toggle="modal" data-bs-target="#editUserModal">
               Editar
             </button>
-            <button type="button" class="btn ${deleteButtonClass} btn-sm delete-user-btn" data-id="${user.id}" ${deleteButtonDisabled} title="${isCurrentUser ? 'No puedes eliminar tu propia cuenta' : ''}">
-              ${deleteButtonText}
-            </button>
+            ${actionButton}
           </td>
         `;
       });
@@ -273,29 +286,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Eliminar usuario
+  // Eliminar (desactivar) y activar usuario
   if (usersTableBody) {
     usersTableBody.addEventListener('click', async (event) => {
-      if (event.target.classList.contains('delete-user-btn')) {
-        const userId = event.target.getAttribute('data-id');
+      const target = event.target;
+      const userId = target.getAttribute('data-id');
+      const row = target.closest('tr');
+      const userName = row ? row.cells[2].textContent.trim() : 'Usuario';
 
-        // Verificar si el usuario está intentando eliminarse a sí mismo
+      if (target.classList.contains('delete-user-btn')) {
+        // Lógica para desactivar usuario
         if (window.currentUser && parseInt(userId) === window.currentUser.id) {
-          Swal.fire('Acción no permitida', 'No puedes eliminar tu propia cuenta de usuario.', 'warning');
+          Swal.fire('Acción no permitida', 'No puedes desactivar tu propia cuenta de usuario.', 'warning');
           return;
         }
 
-        const row = event.target.closest('tr');
-        const userName = row.cells[2].textContent.trim() || 'Usuario';
-
         Swal.fire({
           title: '¿Estás seguro?',
-          text: `Se eliminará al usuario ${userName}, ¡No podrás revertir esto!`,
+          text: `Se desactivará al usuario ${userName}. Podrás reactivarlo después.`,
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#d33',
           cancelButtonColor: '#3085d6',
-          confirmButtonText: 'Sí, eliminarlo!',
+          confirmButtonText: 'Sí, desactivar!',
           cancelButtonText: 'Cancelar'
         }).then(async (result) => {
           if (result.isConfirmed) {
@@ -308,17 +321,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
               if (response.ok) {
                 Swal.fire(
-                  '¡Eliminado!',
+                  '¡Desactivado!',
                   resultData.message,
                   'success'
                 );
                 loadUsers(); // Recargar la tabla
               } else {
-                Swal.fire('Error', resultData.error || 'Error al eliminar usuario', 'error');
+                Swal.fire('Error', resultData.error || 'Error al desactivar usuario', 'error');
               }
             } catch (error) {
-              console.error('Error al eliminar usuario:', error);
-              Swal.fire('Error', 'Error de conexión al eliminar usuario', 'error');
+              console.error('Error al desactivar usuario:', error);
+              Swal.fire('Error', 'Error de conexión al desactivar usuario', 'error');
+            }
+          }
+        });
+      } else if (target.classList.contains('activate-user-btn')) {
+        // Lógica para activar usuario
+        Swal.fire({
+          title: '¿Estás seguro?',
+          text: `Se activará al usuario ${userName}.`,
+          icon: 'info',
+          showCancelButton: true,
+          confirmButtonColor: '#28a745',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Sí, activar!',
+          cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            try {
+              const response = await fetch(`/admin/users/${userId}/activate`, {
+                method: 'PUT',
+              });
+
+              const resultData = await response.json();
+
+              if (response.ok) {
+                Swal.fire(
+                  '¡Activado!',
+                  resultData.message,
+                  'success'
+                );
+                loadUsers(); // Recargar la tabla
+              } else {
+                Swal.fire('Error', resultData.error || 'Error al activar usuario', 'error');
+              }
+            } catch (error) {
+              console.error('Error al activar usuario:', error);
+              Swal.fire('Error', 'Error de conexión al activar usuario', 'error');
             }
           }
         });

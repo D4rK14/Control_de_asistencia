@@ -112,6 +112,14 @@ const loginWithQr = async (req, res) => {
       return res.status(401).json({ error: 'Código QR inválido o no reconocido.' });
     }
 
+    // Verificar si el usuario está desactivado
+    if (user.status === 'desactivado') {
+        console.log("Error: intento de login QR con cuenta desactivada");
+        return res.status(403).json({
+            error: "Tu cuenta ha sido desactivada. Por favor, contacta al administrador."
+        });
+    }
+
     // Comprobar horario de acceso (similar al login normal)
     const devOverrideQR = (process.env.NODE_ENV !== 'production') && req.cookies && req.cookies.DEV_DISABLE_TIME_BLOCK === '1';
     if (isAccessBlockedNow() && !devOverrideQR) {
@@ -177,6 +185,14 @@ const login = async (req, res) => {
             console.log("Error: usuario no existe");
             return res.status(401).render("common/login", { 
                 error: "Usuario no registrado" // Mensaje de error para el usuario.
+            });
+        }
+
+        // Verificar si el usuario está desactivado
+        if (user.status === 'desactivado') {
+            console.log("Error: usuario desactivado");
+            return res.status(403).render("common/login", {
+                error: "Tu cuenta ha sido desactivada. Por favor, contacta al administrador."
             });
         }
 
