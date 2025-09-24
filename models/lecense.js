@@ -96,6 +96,12 @@ const LicenciaMedica = sequelize.define('licencia_medica', {
     tipo_licencia:{
         type: DataTypes.STRING,
         allowNull: true // Permite valores nulos.
+    },
+    // Nuevo campo para el estado de la licencia
+    estado: {
+        type: DataTypes.ENUM('Pendiente', 'Aprobada', 'Rechazada'),
+        defaultValue: 'Pendiente', // Valor por defecto para nuevas licencias
+        allowNull: false
     }
 }, {
     timestamps: false, // Deshabilita las columnas `createdAt` y `updatedAt` gestionadas por Sequelize.
