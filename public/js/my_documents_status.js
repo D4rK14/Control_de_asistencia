@@ -27,13 +27,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const justificacionesData = await justificacionesRes.json();
             const licenciasData = await licenciasRes.json();
 
+            // Logs para depuración
+            console.log("Respuesta Justificaciones:", justificacionesData);
+            console.log("Respuesta Licencias:", licenciasData);
+
             // Formatear justificaciones
             const formattedJustificaciones = (justificacionesData.justificaciones || []).map(j => ({
                 id: j.id,
                 type: 'justification',
                 typeDisplay: 'Justificación',
                 motiveOrProfessional: j.motivo,
-                startDate: formatDate(j.fech-inicio),
+                startDate: formatDate(j.fecha_inicio),
                 endDate: formatDate(j.fecha_fin),
                 status: j.estado,
                 file: j.archivo ? `/uploads/${j.archivo}` : null // Asumiendo que los archivos están en /uploads
@@ -45,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 type: 'license',
                 typeDisplay: 'Licencia Médica',
                 motiveOrProfessional: l.profesional,
-                startDate: formatDate(l.fech-inicio),
+                startDate: formatDate(l.fecha_inicio),
                 endDate: formatDate(l.fecha_fin),
                 status: l.estado,
                 file: l.archivo ? `/uploads/${l.id_usuario}/${l.archivo}` : null // Asumiendo estructura de /uploads/<userId>/<filename>
