@@ -4,7 +4,7 @@
  * @description Controlador para listar y actualizar el estado de justificaciones comunes.
  */
 
-const Justificacion = require('../models/justification');
+const Justificacion = require('../models/Justification');
 const User = require('../models/User');
 const Rol = require('../models/Rol'); // Added Rol model import
 

@@ -5,7 +5,7 @@
  * Este módulo utiliza `userController` para las operaciones de vista y `authMiddleware` para proteger las rutas.
  */
 const express = require("express"); // Importa el framework Express para crear y gestionar rutas.
-const { renderHome, renderUserDashboard, renderAdminDashboard, renderUserReports } = require("../controllers/userController.js"); // Importa las funciones del controlador de usuarios.
+const { renderHome, renderUserDashboard, renderAdminDashboard, renderUserReports, getMyJustifications, getMyLicenses, renderMyDocumentsStatus } = require("../controllers/userController.js"); // Importa las funciones del controlador de usuarios.
 const { generateUserQrLogin } = require("../controllers/userController.js"); // Importa la nueva función de generación de QR de login
 const {verifyToken, authorizeRole} = require("../middlewares/authMiddleware.js"); // Importa los middlewares de autenticación y autorización.
 
@@ -66,6 +66,27 @@ router.get("/reportes_usuario", verifyToken, authorizeRole(['Administrador', 'Ma
  * Protegido por `verifyToken`.
  */
 router.get("/generate-qr-login", verifyToken, generateUserQrLogin);
+
+/**
+ * @route GET /api/user/justificaciones
+ * @description Obtiene las justificaciones del usuario autenticado.
+ * Protegido por `verifyToken`.
+ */
+router.get("/api/user/justificaciones", verifyToken, getMyJustifications);
+
+/**
+ * @route GET /api/user/licencias
+ * @description Obtiene las licencias médicas del usuario autenticado.
+ * Protegido por `verifyToken`.
+ */
+router.get("/api/user/licencias", verifyToken, getMyLicenses);
+
+/**
+ * @route GET /mis-documentos
+ * @description Muestra la vista dedicada para que el usuario vea el estado de sus justificaciones y licencias.
+ * Protegido por `verifyToken` y `authorizeRole`.
+ */
+router.get("/mis-documentos", verifyToken, authorizeRole(['Administrador', 'Marketing', 'Finanzas', 'RR.HH']), renderMyDocumentsStatus);
 
 // Exporta el router para que pueda ser utilizado por la aplicación principal (app.js).
 module.exports = router;

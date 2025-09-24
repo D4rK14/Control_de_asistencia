@@ -16,6 +16,8 @@ const QRCode = require('qrcode'); // Importar la librería qrcode
 const moment = require('moment-timezone'); // Para formatear fechas
 // const fetch = require('node-fetch'); // Ya no es necesario aquí
 const { getChileanHolidays } = require('../helpers/holidayUtils'); // Importar desde el nuevo archivo
+const Justificacion = require('../models/Justification'); // Importar el modelo Justificacion
+const LicenciaMedica = require('../models/lecense'); // Importar el modelo LicenciaMedica
 
 /**
  * @function renderHome
@@ -217,6 +219,64 @@ const generateUserQrLogin = async (req, res) => {
   }
 };
 
+/**
+ * @function getMyJustifications
+ * @description Obtiene todas las justificaciones de un usuario específico.
+ * @param {Object} req - Objeto de solicitud de Express (espera `req.user.id`).
+ * @param {Object} res - Objeto de respuesta de Express.
+ * @returns {Promise<void>} Envía una respuesta JSON con las justificaciones del usuario.
+ */
+const getMyJustifications = async (req, res) => {
+    try {
+        const id_usuario = req.user.id; // ID del usuario logueado
+        const justificaciones = await Justificacion.findAll({
+            where: { id_usuario },
+            order: [['fecha_solicitud', 'DESC']]
+        });
+        res.json({ justificaciones: justificaciones.map(j => j.toJSON()) });
+    } catch (error) {
+        console.error("Error al obtener justificaciones del usuario:", error);
+        res.status(500).json({ error: 'Error al obtener tus justificaciones.' });
+    }
+};
+
+/**
+ * @function getMyLicenses
+ * @description Obtiene todas las licencias médicas de un usuario específico.
+ * @param {Object} req - Objeto de solicitud de Express (espera `req.user.id`).
+ * @param {Object} res - Objeto de respuesta de Express.
+ * @returns {Promise<void>} Envía una respuesta JSON con las licencias médicas del usuario.
+ */
+const getMyLicenses = async (req, res) => {
+    try {
+        const id_usuario = req.user.id; // ID del usuario logueado
+        const licencias = await LicenciaMedica.findAll({
+            where: { id_usuario },
+            order: [['fecha_emision', 'DESC']]
+        });
+        res.json({ licencias: licencias.map(l => l.toJSON()) });
+    } catch (error) {
+        console.error("Error al obtener licencias médicas del usuario:", error);
+        res.status(500).json({ error: 'Error al obtener tus licencias médicas.' });
+    }
+};
+
+/**
+ * @function renderMyDocumentsStatus
+ * @description Renderiza la vista del estado de las justificaciones y licencias del usuario.
+ * @param {Object} req - Objeto de solicitud de Express.
+ * @param {Object} res - Objeto de respuesta de Express.
+ * @returns {void} Renderiza la plantilla `common/my_documents_status.hbs`.
+ */
+const renderMyDocumentsStatus = (req, res) => {
+    try {
+        res.render("common/my_documents_status", { usuario: req.user });
+    } catch (error) {
+        console.error("Error al renderizar la vista de estado de documentos:", error);
+        res.status(500).render("common/dashboard_error", { message: "Error al cargar la vista de documentos." });
+    }
+};
+
 // Función para obtener feriados de feriados.cl (ELIMINAR ESTA FUNCIÓN DE AQUÍ)
 // const getChileanHolidays = async (year = moment().year()) => {
 //     try {
@@ -245,5 +305,8 @@ module.exports = {
   renderUserDashboard,
   renderAdminDashboard,
   renderUserReports,
-  generateUserQrLogin // Exportar la nueva función
+  generateUserQrLogin,
+  getMyJustifications,
+  getMyLicenses,
+  renderMyDocumentsStatus // Exportar la nueva función
 };
