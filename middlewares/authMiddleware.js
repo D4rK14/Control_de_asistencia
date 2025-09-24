@@ -10,6 +10,7 @@ const jwt = require("jsonwebtoken"); // Importa la librería JSON Web Token para
 // Obtiene la clave secreta para la verificación de tokens JWT desde las variables de entorno.
 // Es crucial que esta clave sea la misma utilizada para firmar los tokens y se mantenga segura.
 const JWT_SECRET = process.env.JWT_SECRET;
+const { isAccessBlockedNow } = require('../helpers/accessTime');
 
 /**
  * @function verifyToken
@@ -44,6 +45,24 @@ function verifyToken(req, res, next) {
         return res.status(401).json({ error: 'Token inválido o expirado' });
       }
       return res.redirect("/login"); // Si el token no es válido y es ruta normal, redirige al login.
+    }
+
+    // Restricción horaria global: si estamos dentro del periodo bloqueado, cerrar sesión.
+    if (isAccessBlockedNow()) {
+      console.log('⛔ Acceso denegado por horario (22:00-06:00)');
+      // Borrar cookies de autenticación y redirigir al login o devolver JSON si es API.
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+      // Intentar destruir la sesión en el servidor si existe
+      if (req.session) {
+        try {
+          req.session.destroy(() => {});
+        } catch (e) {
+          console.warn('No se pudo destruir la sesión:', e && e.message);
+        }
+      }
+      if (isApi) return res.status(403).json({ error: 'Sistema cerrado entre las 22:00 y las 06:00' });
+      return res.redirect('/login');
     }
 
     // Si el token es válido, adjunta la información del usuario decodificada a `req.user`.

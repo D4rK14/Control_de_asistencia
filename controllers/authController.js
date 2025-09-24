@@ -11,6 +11,7 @@ const jwt = require("jsonwebtoken");          // JSON Web Token: Utilizado para 
 const bcrypt = require("bcryptjs");           // Bcryptjs: Librería para encriptar y comparar contraseñas de forma segura (hashing).
 const User = require("../models/User");       // Modelo de Usuario: Representa la tabla de usuarios en la base de datos.
 const Rol = require("../models/Rol");         // Modelo de Rol: Representa la tabla de roles de usuario en la base de datos.
+const { isAccessBlockedNow, msUntilNext22 } = require('../helpers/accessTime');
 
 // Obtención de las claves secretas para la firma de tokens desde variables de entorno.
 // Es CRÍTICO que estas claves sean seguras, complejas y se mantengan en secreto, especialmente en entornos de producción.
@@ -121,18 +122,37 @@ const login = async (req, res) => {
             });
         }
 
-        // Si el RUT y la contraseña son correctos, se procede a generar los tokens.
+    // Antes de generar tokens, comprobar si el sistema está en horario bloqueado.
+    if (isAccessBlockedNow()) {
+      console.log('Intento de login fuera de horario permitido');
+      return res.status(403).render('common/login', { error: 'El sistema se encuentra cerrado entre las 22:00 y las 06:00. Intenta más tarde.' });
+    }
+
+    // Si el RUT y la contraseña son correctos, se procede a generar los tokens.
         console.log("Login correcto, generando tokens...");
         const accessToken = generateAccessToken(user); // Genera el token de acceso.
         const refreshToken = generateRefreshToken(user); // Genera el token de refresco.
 
         // Establece el token de acceso en una cookie HTTP-only. Esto previene ataques XSS.
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,     // La cookie no es accesible a través de JavaScript del lado del cliente.
-            secure: process.env.NODE_ENV === 'production', // `true` en producción para solo enviar sobre HTTPS.
-            sameSite: "strict", // Protección contra ataques CSRF, asegura que la cookie solo se envíe para solicitudes del mismo sitio.
-            maxAge: 15 * 60 * 1000, // Duración de la cookie: 15 minutos (en milisegundos).
-        });
+    // Queremos que la sesión/cookie se cierre a las 22:00. Calculamos el tiempo restante hasta las 22:00.
+    const msTo22 = msUntilNext22();
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,     // La cookie no es accesible a través de JavaScript del lado del cliente.
+      secure: process.env.NODE_ENV === 'production', // `true` en producción para solo enviar sobre HTTPS.
+      sameSite: "strict", // Protección contra ataques CSRF, asegura que la cookie solo se envíe para solicitudes del mismo sitio.
+      // Usamos el menor entre 15 minutos y el tiempo hasta las 22:00 para forzar expiración a las 22:00.
+      maxAge: Math.min(15 * 60 * 1000, msTo22),
+    });
+
+    // Si express-session está en uso, ajustar la cookie de sesión para expirar también a las 22:00.
+    try {
+      if (req.session && req.session.cookie) {
+        req.session.cookie.maxAge = Math.min(req.session.cookie.maxAge || (24*60*60*1000), msTo22);
+      }
+    } catch (e) {
+      console.warn('No fue posible ajustar la expiración de la sesión:', e.message);
+    }
 
         // Establece el token de refresco en otra cookie HTTP-only.
         res.cookie("refreshToken", refreshToken, {
