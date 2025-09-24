@@ -121,7 +121,15 @@ const login = async (req, res) => {
             });
         }
 
-        // Si el RUT y la contraseña son correctos, se procede a generar los tokens.
+    // Antes de generar tokens, comprobar si el sistema está en horario bloqueado.
+    // Permitir override en entorno de pruebas mediante cookie `DEV_DISABLE_TIME_BLOCK`.
+    const devOverride = (process.env.NODE_ENV !== 'production') && req.cookies && req.cookies.DEV_DISABLE_TIME_BLOCK === '1';
+    if (isAccessBlockedNow() && !devOverride) {
+      console.log('Intento de login fuera de horario permitido');
+      return res.status(403).render('common/login', { error: 'El sistema se encuentra cerrado entre las 22:00 y las 06:00. Intenta más tarde.' });
+    }
+
+    // Si el RUT y la contraseña son correctos, se procede a generar los tokens.
         console.log("Login correcto, generando tokens...");
         const accessToken = generateAccessToken(user); // Genera el token de acceso.
         const refreshToken = generateRefreshToken(user); // Genera el token de refresco.

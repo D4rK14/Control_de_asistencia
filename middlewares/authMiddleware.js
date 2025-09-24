@@ -46,6 +46,27 @@ function verifyToken(req, res, next) {
       return res.redirect("/login"); // Si el token no es válido y es ruta normal, redirige al login.
     }
 
+    // Permitir override en entorno de pruebas mediante cookie `DEV_DISABLE_TIME_BLOCK`.
+    const devOverride = (process.env.NODE_ENV !== 'production') && req.cookies && req.cookies.DEV_DISABLE_TIME_BLOCK === '1';
+
+    // Restricción horaria global: si estamos dentro del periodo bloqueado, cerrar sesión.
+    if (isAccessBlockedNow() && !devOverride) {
+      console.log('⛔ Acceso denegado por horario (22:00-06:00)');
+      // Borrar cookies de autenticación y redirigir al login o devolver JSON si es API.
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+      // Intentar destruir la sesión en el servidor si existe
+      if (req.session) {
+        try {
+          req.session.destroy(() => {});
+        } catch (e) {
+          console.warn('No se pudo destruir la sesión:', e && e.message);
+        }
+      }
+      if (isApi) return res.status(403).json({ error: 'Sistema cerrado entre las 22:00 y las 06:00' });
+      return res.redirect('/login');
+    }
+
     // Si el token es válido, adjunta la información del usuario decodificada a `req.user`.
     req.user = user; // `user` contiene el payload del JWT (ej: id, rut, nombre, rol).
     console.log("✅ Token válido, usuario:", user.rut); // Log para indicar que el token es válido y el RUT del usuario.
