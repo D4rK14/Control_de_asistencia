@@ -35,6 +35,8 @@ const upload = multer({ dest: "uploads/" });
 // Sirve archivos estáticos (CSS, JS del frontend, imágenes) desde la carpeta 'public'.
 // Esto permite que el navegador cargue recursos como 'style.css' o 'script.js'.
 app.use(express.static(path.join(__dirname, 'public')));
+// Servir archivos subidos (licencias/justificaciones)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Middleware para parsear el cuerpo de las peticiones HTTP. Permite leer datos enviados por formularios HTML.
 app.use(express.urlencoded({ extended: true }));
@@ -140,6 +142,24 @@ app.use('/api', licenseRoutes); // Usa las rutas de licencias médicas con prefi
 app.use('/reports', reportRoutes); // Usa las rutas de reportes con prefijo /reports
 app.use('/', adminRoutes); // Usa las rutas de administración de usuarios
 
+// Fallback explícito para servir archivos en uploads por ruta parametrizada
+app.get('/uploads/:userId/:file', (req, res, next) => {
+    const userId = String(req.params.userId || '').replace(/[^0-9]/g, '');
+    const file = String(req.params.file || '').replace(/\.{2,}/g, '.');
+    const abs = path.join(__dirname, 'uploads', userId, file);
+    return res.sendFile(abs, err => {
+        if (err) return next();
+    });
+});
+
+app.get('/uploads/:file', (req, res, next) => {
+    const file = String(req.params.file || '').replace(/\.{2,}/g, '.');
+    const abs = path.join(__dirname, 'uploads', file);
+    return res.sendFile(abs, err => {
+        if (err) return next();
+    });
+});
+
 /**
  * Middleware para manejar rutas no encontradas (404)
  * Este middleware se ejecuta si ninguna de las rutas anteriores ha coincidido con la solicitud.
@@ -152,14 +172,8 @@ app.use((req, res) => {
  * Sincronización con la base de datos y levantamiento del servidor
  * Antes de iniciar el servidor, se asegura de que los modelos de Sequelize estén sincronizados con la DB.
  */
-// Control del comportamiento de sincronización: por seguridad NO ejecutar 'alter' por defecto.
-// Establece la variable de entorno SYNC_ALTER='true' SOLO si quieres que Sequelize intente modificar el esquema automáticamente.
-const syncAlter = process.env.SYNC_ALTER === 'true';
-
-const syncOptions = syncAlter ? { alter: true } : {};
-
-sequelize.sync(syncOptions).then(() => {
-    console.log(`Sequelize sync ejecutado con opciones: ${JSON.stringify(syncOptions)}`);
+// Evitar alter automático en producción para no crear índices duplicados
+sequelize.sync().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor escuchando en http://localhost:${PORT}`);
     });

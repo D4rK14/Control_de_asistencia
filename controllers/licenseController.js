@@ -9,7 +9,16 @@ const path = require('path'); // Para manejar rutas de archivos
 // Se configura el almacenamiento en disco, especificando el destino y el nombre del archivo.
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/'); // Guarda los archivos en la carpeta 'uploads/'
+        try {
+            const userId = (req.user && req.user.id) ? String(req.user.id) : 'unknown';
+            const dir = path.join('uploads', userId);
+            // Asegurar que el directorio por usuario exista
+            require('fs').mkdirSync(dir, { recursive: true });
+            cb(null, dir);
+        } catch (e) {
+            console.error('Error creando directorio de uploads por usuario:', e);
+            cb(null, 'uploads/');
+        }
     },
     filename: (req, file, cb) => {
         // Genera un nombre de archivo único para evitar colisiones
@@ -109,7 +118,8 @@ const createLicense = async (req, res) => {
             sexo_trabajador: datosExtraidos.sexo !== 'No encontrado' ? datosExtraidos.sexo : null,
             direccion_reposo: datosExtraidos.direccion !== 'No encontrado' ? datosExtraidos.direccion : null,
             telefono_contacto: datosExtraidos.telefono !== 'No encontrado' ? datosExtraidos.telefono : null,
-            archivo: req.file.filename, // Guarda el nombre del archivo subido
+            // Guardar ruta relativa por usuario: "<id_usuario>/<filename>"
+            archivo: `${id_usuario}/${req.file.filename}`,
             tipo_licencia: datosExtraidos.tipoLicencia !== 'No encontrado' ? datosExtraidos.tipoLicencia : null,
         });
 

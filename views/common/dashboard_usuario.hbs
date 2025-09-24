@@ -44,8 +44,9 @@
       <div class="card-body">
         <a href="/inasistencia" class="btn btn-primary">Justificar Inasistencia</a>
         <a href="/licencia_medica" class="btn btn-primary">Justificar Licencia Medica</a>
-        {{#if (or (eq usuario.rol 'Administrador') (eq usuario.rol 'RR.HH'))}}
+        {{#if (or (eq usuario.rol 'Administrador') (eq usuario.rol 'RR.HH') (eq usuario.rol 'rr.hh'))}}
         <a href="/admin/justificaciones" class="btn btn-warning">Editar Justificaciones</a>
+        <a href="/admin/licencias" class="btn btn-warning">Ver Licencias</a>
         {{/if}}
       </div>
     </div>
