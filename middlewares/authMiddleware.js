@@ -47,8 +47,11 @@ function verifyToken(req, res, next) {
       return res.redirect("/login"); // Si el token no es válido y es ruta normal, redirige al login.
     }
 
-    // Restricción horaria global: si estamos dentro del periodo bloqueado, cerrar sesión.
-    if (isAccessBlockedNow()) {
+    // Permitir override en entorno de pruebas mediante cookie `DEV_DISABLE_TIME_BLOCK`.
+    const devOverride = (process.env.NODE_ENV !== 'production') && req.cookies && req.cookies.DEV_DISABLE_TIME_BLOCK === '1';
+
+    // Restricción horaria global: si estamos dentro del periodo bloqueado, cerrar sesión (a menos que devOverride esté activo).
+    if (isAccessBlockedNow() && !devOverride) {
       console.log('⛔ Acceso denegado por horario (22:00-06:00)');
       // Borrar cookies de autenticación y redirigir al login o devolver JSON si es API.
       res.clearCookie('accessToken');

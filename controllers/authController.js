@@ -124,7 +124,8 @@ const loginWithQr = async (req, res) => {
     }
 
     // Comprobar horario de acceso (similar al login normal)
-    if (isAccessBlockedNow()) {
+    const devOverrideQR = (process.env.NODE_ENV !== 'production') && req.cookies && req.cookies.DEV_DISABLE_TIME_BLOCK === '1';
+    if (isAccessBlockedNow() && !devOverrideQR) {
       console.log('Intento de login QR fuera de horario permitido');
       return res.status(403).json({ error: 'El sistema se encuentra cerrado entre las 22:00 y las 06:00. Intenta más tarde.' });
     }
@@ -199,7 +200,8 @@ const login = async (req, res) => {
         }
 
     // Antes de generar tokens, comprobar si el sistema está en horario bloqueado.
-    if (isAccessBlockedNow()) {
+    const devOverride = (process.env.NODE_ENV !== 'production') && req.cookies && req.cookies.DEV_DISABLE_TIME_BLOCK === '1';
+    if (isAccessBlockedNow() && !devOverride) {
       console.log('Intento de login fuera de horario permitido');
       return res.status(403).render('common/login', { error: 'El sistema se encuentra cerrado entre las 22:00 y las 06:00. Intenta más tarde.' });
     }
