@@ -113,9 +113,6 @@ const createLicense = async (req, res) => {
             tipo_licencia: datosExtraidos.tipoLicencia !== 'No encontrado' ? datosExtraidos.tipoLicencia : null,
         });
 
-        // Eliminar el archivo temporal después de procesar
-        await fs.unlink(pdfPath);
-
         res.status(201).json({ message: 'Licencia creada con éxito', licencia: nuevaLicencia });
     } catch (error) {
         console.error('Error al crear licencia:', error && error.stack ? error.stack : error);
