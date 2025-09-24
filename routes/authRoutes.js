@@ -6,6 +6,7 @@
  */
 const express = require("express"); // Importa el framework Express para crear y gestionar rutas.
 const { renderLogin, login, register, logout} = require("../controllers/authController.js"); // Importa las funciones del controlador de autenticación.
+const { loginWithQr } = require("../controllers/authController.js"); // Importa la nueva función de login con QR
 
 const router = express.Router(); // Crea una nueva instancia de un router de Express.
 
@@ -26,6 +27,13 @@ router.get("/login", renderLogin);
  * Intenta autenticar al usuario y, si es exitoso, establece las cookies de sesión y redirige.
  */
 router.post("/login", login);
+
+/**
+ * @route POST /auth/login-qr
+ * @description Procesa el inicio de sesión mediante código QR.
+ * Verifica el token JWT del QR y autentica al usuario.
+ */
+router.post("/auth/login-qr", loginWithQr);
 
 /**
  * @section Rutas de Registro

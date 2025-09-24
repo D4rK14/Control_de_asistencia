@@ -32,9 +32,34 @@
         </button>
       </fieldset>
     </form>
+    <button type="button" class="btn btn-secondary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#qrLoginModal">
+        <i class="fa-solid fa-qrcode me-2"></i>Iniciar Sesión con QR
+    </button>
   </div>
 </div>
 
+<!-- Modal para Login con QR -->
+<div class="modal fade" id="qrLoginModal" tabindex="-1" aria-labelledby="qrLoginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="qrLoginModalLabel">Iniciar Sesión con Código QR</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Escanea tu código QR de acceso:</p>
+        <div id="qr-reader-login" style="width:100%;"></div>
+        <div id="qrLoginMessage" class="mt-3"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="/js/qrLoginScanner.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   // Función para validar formato de correo electrónico

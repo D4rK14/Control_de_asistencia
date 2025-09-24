@@ -18,6 +18,7 @@ const { isAccessBlockedNow, msUntilNext22 } = require('../helpers/accessTime');
 // Se recomienda usar herramientas como Dotenvx para gestionar estas variables de forma segura.
 const JWT_SECRET = process.env.JWT_SECRET; // Clave para firmar el token de acceso (vida corta).
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET; // Clave para firmar el token de refresco (vida más larga).
+const JWT_QR_SECRET = process.env.JWT_QR_SECRET || 'super_secreto_para_qrs_seguros'; // Clave para firmar los JWT de QR
 
 /**
  * @function generateAccessToken
@@ -81,6 +82,81 @@ const renderLogin = (req, res) => {
   } else {
     // Si no hay ningún token de acceso en las cookies, muestra la página de login normalmente.
     res.render("common/login", { error: null });
+  }
+};
+
+/**
+ * @function loginWithQr
+ * @description Controlador para procesar el inicio de sesión de un usuario mediante código QR.
+ * Verifica el token JWT enviado desde el QR, autentica al usuario y establece cookies de sesión.
+ * @param {Object} req - Objeto de solicitud HTTP que contiene `qrCodeContent` en el cuerpo.
+ * @param {Object} res - Objeto de respuesta HTTP de Express.
+ * @returns {Promise<void>} Envía una respuesta JSON indicando el éxito o fracaso y redirige al dashboard.
+ */
+const loginWithQr = async (req, res) => {
+  const { qrCodeContent } = req.body;
+
+  if (!qrCodeContent) {
+    return res.status(400).json({ error: 'Contenido del código QR es requerido.' });
+  }
+
+  let userId;
+  try {
+    const decoded = jwt.verify(qrCodeContent, JWT_QR_SECRET);
+    userId = decoded.userId;
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Código QR expirado. Por favor, genera uno nuevo.' });
+    }
+    console.error('Error verificando token JWT para login QR:', error);
+    return res.status(401).json({ error: 'Código QR inválido o no autorizado para iniciar sesión.' });
+  }
+
+  try {
+    // Buscar el usuario por el ID extraído del token QR
+    const user = await User.findOne({
+      where: { id: userId },
+      include: [{ model: Rol, as: 'rol' }]
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    // Comprobar horario de acceso (similar al login normal)
+    if (isAccessBlockedNow()) {
+      console.log('Intento de login QR fuera de horario permitido');
+      return res.status(403).json({ error: 'El sistema se encuentra cerrado entre las 22:00 y las 06:00. Intenta más tarde.' });
+    }
+
+    // Generar tokens de acceso y refresco
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    // Establecer cookies
+    const msTo22 = msUntilNext22();
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: "strict",
+      maxAge: Math.min(15 * 60 * 1000, msTo22),
+    });
+
+    if (req.session && req.session.cookie) {
+      req.session.cookie.maxAge = Math.min(req.session.cookie.maxAge || (24*60*60*1000), msTo22);
+    }
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({ message: 'Inicio de sesión exitoso', redirectUrl: '/dashboard_usuario' });
+  } catch (err) {
+    console.error("Error en el proceso de login QR:", err);
+    return res.status(500).json({ error: 'Error interno del servidor al iniciar sesión con QR.', details: err.message });
   }
 };
 
@@ -225,5 +301,6 @@ module.exports = {
     renderLogin,
     login,
     register,
-    logout
+    logout,
+    loginWithQr // Exportar la nueva función
 };
