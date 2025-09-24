@@ -11,6 +11,8 @@ const { _fetchUsersAndRolesData } = require("../controllers/adminController"); /
 const Asistencia = require('../models/assist'); // Importar el modelo Asistencia
 const EstadoAsistencia = require('../models/StateAssist'); // Importar el modelo EstadoAsistencia
 const CategoriaAsistencia = require('../models/assistCategory'); // Importar el modelo CategoriaAsistencia
+const User = require('../models/User'); // Importar el modelo User para acceder al qr_login_secret
+const QRCode = require('qrcode'); // Importar la librería qrcode
 const moment = require('moment-timezone'); // Para formatear fechas
 // const fetch = require('node-fetch'); // Ya no es necesario aquí
 const { getChileanHolidays } = require('../helpers/holidayUtils'); // Importar desde el nuevo archivo
@@ -191,6 +193,30 @@ const renderUserReports = async (req, res) => {
   }
 };
 
+/**
+ * @function generateUserQrLogin
+ * @description Genera un código QR estático para el login de un usuario.
+ * @param {Object} req - Objeto de solicitud de Express (espera `req.user` con datos del usuario).
+ * @param {Object} res - Objeto de respuesta de Express.
+ * @returns {Promise<void>} Genera un código QR y lo envía como respuesta.
+ */
+const generateUserQrLogin = async (req, res) => {
+  try {
+    const user = req.user;
+    const qrLoginSecret = user.qr_login_secret;
+
+    if (!qrLoginSecret) {
+      return res.status(400).json({ message: "El usuario no tiene un secreto de login QR configurado." });
+    }
+
+    const qrCodeDataUrl = await QRCode.toDataURL(qrLoginSecret);
+    res.send(qrCodeDataUrl);
+  } catch (error) {
+    console.error("Error al generar el código QR de login:", error);
+    res.status(500).json({ message: "Error al generar el código QR de login." });
+  }
+};
+
 // Función para obtener feriados de feriados.cl (ELIMINAR ESTA FUNCIÓN DE AQUÍ)
 // const getChileanHolidays = async (year = moment().year()) => {
 //     try {
@@ -218,5 +244,6 @@ module.exports = {
   renderHome,
   renderUserDashboard,
   renderAdminDashboard,
-  renderUserReports
+  renderUserReports,
+  generateUserQrLogin // Exportar la nueva función
 };

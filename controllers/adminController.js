@@ -21,6 +21,10 @@ const _fetchUsersAndRolesData = async () => {
     try {
         const users = await User.findAll({
             include: [{ model: Rol, as: 'rol' }],
+            attributes: {
+                exclude: ['password'], // Excluir la contraseña por seguridad
+                include: ['qr_login_secret'] // Incluir el secreto QR para el login
+            },
             raw: true
         });
         const roles = await Rol.findAll({ raw: true });

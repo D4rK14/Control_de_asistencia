@@ -294,4 +294,4 @@ const autoMarkHolidayAttendance = async () => {
 
 
 // Exporta las funciones para que puedan ser utilizadas por las rutas de Express.
-module.exports = { registrarAsistencia, misAsistencias, getMisAsistenciasByUserId, autoMarkHolidayAttendance, processAttendanceInternal };
+module.exports = { registrarAsistencia, misAsistencias, getMisAsistenciasByUserId, autoMarkHolidayAttendance };

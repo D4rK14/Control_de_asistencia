@@ -60,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${user.correo || '-'}</td>
           <td>${user['rol.nombre'] || '-'}</td> <!-- Se modificó para acceder directamente a 'rol.nombre' -->
           <td>
+            <button type="button" class="btn btn-info btn-sm view-qr-btn me-2" data-qr-secret="${user.qr_login_secret || ''}">
+              Ver QR
+            </button>
             <button type="button" class="btn btn-primary btn-sm edit-user-btn" data-id="${user.id}" data-bs-toggle="modal" data-bs-target="#editUserModal">
               Editar
             </button>
