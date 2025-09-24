@@ -35,7 +35,7 @@ const asistencia = sequelize.define('asistencia', {
     // Hora de entrada registrada por el usuario.
     hora_entrada:{
         type: DataTypes.TIME,
-        allowNull: false // No permite valores nulos, es obligatoria para la entrada.
+        allowNull: true // permite valores nulos, es obligatoria para la entrada.
     },
     // Hora de salida registrada por el usuario (puede ser nula si solo se ha marcado la entrada).
     hora_salida:{
