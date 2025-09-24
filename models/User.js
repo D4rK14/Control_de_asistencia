@@ -61,6 +61,12 @@ const User = sequelize.define('users', {
         type: DataTypes.INTEGER,
         allowNull: true, // Permite valores nulos, puede ser asignado por defecto o después.
         defaultValue: 2 // Por ejemplo, un rol por defecto para nuevos usuarios (ej: 2 = Empleado).
+    },
+    // Estado de actividad del usuario (activo/desactivado).
+    status: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'activo' // Por defecto, los usuarios están activos.
     }
 }, {
     timestamps: false, // Deshabilita las columnas `createdAt` y `updatedAt` gestionadas por Sequelize.

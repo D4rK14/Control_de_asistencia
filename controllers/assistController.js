@@ -51,6 +51,12 @@ const determinarCategoriaAsistencia = (tipo, horaActual) => {
  */
 const processAttendanceInternal = async (id_usuario, tipo) => {
   try {
+    // Verificar el estado del usuario
+    const user = await User.findByPk(id_usuario);
+    if (!user || user.status === 'desactivado') {
+      return { success: false, status: 403, message: 'Usuario desactivado o no encontrado.' };
+    }
+
     const hoy = new Date();
     const fechaFormateada = moment(hoy).format('YYYY-MM-DD');
 
@@ -152,6 +158,12 @@ const misAsistencias = async (req, res) => {
   try {
     const id_usuario = req.params.id;
 
+    // Verificar el estado del usuario
+    const user = await User.findByPk(id_usuario);
+    if (!user || user.status === 'desactivado') {
+        return res.status(403).json({ error: 'Acceso denegado: Usuario desactivado o no encontrado.' });
+    }
+
     const asistencias = await Asistencia.findAll({
       where: { id_usuario },
       include: [
@@ -250,8 +262,11 @@ const autoMarkHolidayAttendance = async () => {
         if (esFeriado) {
             console.log(`✅ ${hoy} es feriado. Marcando asistencia como 'Presente' para todos los trabajadores.`);
 
-            // Obtener todos los usuarios del sistema
-            const users = await User.findAll({ attributes: ['id'] });
+            // Obtener todos los usuarios del sistema que estén activos
+            const users = await User.findAll({
+                where: { status: 'activo' }, // Solo usuarios activos
+                attributes: ['id']
+            });
 
             const idEstadoPresente = 1; // Asumiendo que ID 1 es 'Presente' en EstadoAsistencia
             const idCategoriaEntradaNormal = 1; // Asumiendo que ID 1 es 'Entrada Normal' en CategoriaAsistencia

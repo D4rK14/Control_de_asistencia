@@ -7,7 +7,7 @@
  */
 const express = require("express"); // Importa el framework Express para crear y gestionar rutas.
 const { verifyToken, authorizeRole } = require("../middlewares/authMiddleware.js"); // Importa los middlewares de autenticación y autorización.
-const { renderAdminUserDashboard, getUsersAndRoles, getUserById, createUser, updateUser, deleteUser, changePassword } = require("../controllers/adminController.js"); // Importa las funciones del controlador de administración.
+const { renderAdminUserDashboard, getUsersAndRoles, getUserById, createUser, updateUser, deleteUser, changePassword, activateUser } = require("../controllers/adminController.js"); // Importa las funciones del controlador de administración.
 const { renderAdminJustifications, getAllJustifications, updateJustificationStatus } = require("../controllers/justificationController.js");
 const { renderAdminDashboard } = require("../controllers/userController.js"); // Importa la función para renderizar el dashboard de administrador.
 
@@ -72,6 +72,13 @@ router.delete("/admin/users/:id", deleteUser);
  * Requiere el ID del usuario como parámetro en la URL y oldPassword, newPassword en el cuerpo.
  */
 router.put("/admin/users/:id/change-password", changePassword);
+
+/**
+ * @route PUT /admin/users/:id/activate
+ * @description Ruta para reactivar un usuario. Solo accesible para administradores.
+ * Requiere el ID del usuario a activar como parámetro en la URL.
+ */
+router.put("/admin/users/:id/activate", activateUser);
 
 /**
  * Rutas de Justificaciones (Admin)

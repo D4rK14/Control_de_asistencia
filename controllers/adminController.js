@@ -194,11 +194,40 @@ const deleteUser = async (req, res) => {
             return res.status(404).json({ error: 'Usuario no encontrado.' });
         }
 
-        await user.destroy(); // Elimina el usuario de la base de datos.
-        res.json({ message: 'Usuario eliminado con éxito.' });
+        // Cambiar el estado del usuario a 'desactivado' en lugar de eliminarlo físicamente.
+        user.status = 'desactivado';
+        await user.save();
+
+        res.json({ message: 'Usuario desactivado con éxito.' });
     } catch (error) {
         console.error("Error al eliminar usuario:", error);
         res.status(500).json({ error: 'Error al eliminar el usuario.', details: error.message });
+    }
+};
+
+/**
+ * @function activateUser
+ * @description Reactiva un usuario cambiando su estado a 'activo'.
+ * Requiere el ID del usuario en los parámetros de la URL.
+ * @param {Object} req - Objeto de solicitud de Express. Espera `id` en `req.params`.
+ * @param {Object} res - Objeto de respuesta de Express.
+ * @returns {Promise<void>} Envía una respuesta JSON indicando el éxito o el fracaso de la reactivación.
+ */
+const activateUser = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+
+        user.status = 'activo';
+        await user.save();
+
+        res.json({ message: 'Usuario activado con éxito.' });
+    } catch (error) {
+        console.error("Error al activar usuario:", error);
+        res.status(500).json({ error: 'Error al activar el usuario.', details: error.message });
     }
 };
 
@@ -245,6 +274,7 @@ module.exports = {
     createUser,
     updateUser,
     deleteUser,
+    activateUser,
     changePassword,
     _fetchUsersAndRolesData // Exporta la función interna para que otros controladores puedan usarla.
 };
