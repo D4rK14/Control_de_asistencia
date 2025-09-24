@@ -90,6 +90,16 @@ document.addEventListener('DOMContentLoaded', () => {
       createRolSelect.innerHTML = '';
       editRolSelect.innerHTML = '';
       data.roles.forEach(rol => {
+        // No añadir el rol de Administrador al selector de creación de usuario
+        if (rol.nombre === 'Administrador') {
+            // Asegurarse de que el Administrador siempre se pueda editar, pero no crear como nuevo.
+            const optionEdit = document.createElement('option');
+            optionEdit.value = rol.id;
+            optionEdit.textContent = rol.nombre;
+            editRolSelect.appendChild(optionEdit);
+            return; // Saltar este rol para el selector de creación
+        }
+
         const optionCreate = document.createElement('option');
         optionCreate.value = rol.id;
         optionCreate.textContent = rol.nombre;
