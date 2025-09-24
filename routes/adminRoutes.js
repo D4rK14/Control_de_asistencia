@@ -9,6 +9,7 @@ const express = require("express"); // Importa el framework Express para crear y
 const { verifyToken, authorizeRole } = require("../middlewares/authMiddleware.js"); // Importa los middlewares de autenticación y autorización.
 const { renderAdminUserDashboard, getUsersAndRoles, getUserById, createUser, updateUser, deleteUser, changePassword, activateUser } = require("../controllers/adminController.js"); // Importa las funciones del controlador de administración.
 const { renderAdminJustifications, getAllJustifications, updateJustificationStatus } = require("../controllers/justificationController.js");
+const { renderAdminLicenses, getAllLicenses, updateLicenseStatus, downloadLicenseFile } = require("../controllers/licenseAdminController.js");
 const { renderAdminDashboard } = require("../controllers/userController.js"); // Importa la función para renderizar el dashboard de administrador.
 
 const router = express.Router(); // Crea una nueva instancia de un router de Express.
@@ -86,6 +87,14 @@ router.put("/admin/users/:id/activate", activateUser);
 router.get('/admin/justificaciones', renderAdminJustifications);
 router.get('/api/admin/justificaciones', getAllJustifications);
 router.put('/api/admin/justificaciones/:id/estado', updateJustificationStatus);
+
+/**
+ * Rutas de Licencias (Admin)
+ */
+router.get('/admin/licencias', renderAdminLicenses);
+router.get('/api/admin/licencias', getAllLicenses);
+router.put('/api/admin/licencias/:id/estado', updateLicenseStatus);
+router.get('/api/admin/licencias/:id/archivo', downloadLicenseFile);
 
 // Exporta el router para que pueda ser utilizado por la aplicación principal (app.js).
 module.exports = router;
