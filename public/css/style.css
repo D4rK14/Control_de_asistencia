@@ -61,6 +61,14 @@ html,body{
 .table-actions .btn{ white-space:nowrap; }
 .table-actions .btn + .btn{ margin-left: .35rem; }
 
+/* Asegurar espacio suficiente para la columna de acciones en la gestión de usuarios
+	 Evita que el botón "Desactivar" quede recortado al final de la tabla */
+.user-crud table th:last-child,
+.user-crud table td:last-child {
+	min-width: 170px; /* espacio mínimo para botones de acción */
+	white-space: nowrap; /* evitar salto de línea dentro de la celda */
+}
+
 /* Tarjetas ligeras */
 .card{
 	background: var(--bg-2);
