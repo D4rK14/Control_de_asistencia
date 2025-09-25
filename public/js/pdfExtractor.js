@@ -1,3 +1,18 @@
+// Archivo: public/js/pdfExtractor.js
+// Configuración del worker de PDF.js. Apunta a la URL del CDN para pdf.worker.min.js
+
+/**
+ * @function extraerDatosLicencia
+ * @description Extrae datos específicos de una licencia médica chilena a partir de un texto plano extraído de un PDF.
+ * @param {string} textoRaw - El texto completo extraído del PDF de la licencia médica.
+ * @returns {Object} Un objeto con los datos de la licencia médica (folio, nombre, rut, etc.).
+ */
+// En el navegador exponemos la función en window para evitar `module is not defined`.
+// Además fijamos el workerSrc de pdfjs si está disponible.
+if (typeof window !== 'undefined' && window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+}
+
 function extraerDatosLicencia(textoRaw) {
   // --- 1) Normalización suave del texto ---
   let texto = (textoRaw || '')
@@ -71,6 +86,16 @@ function extraerDatosLicencia(textoRaw) {
     /Tel[eé]fono\s*:*\s*((?:\+?56)?\s*(?:\(?0?\d{1,2}\)?)?\s*\d{7,9}(?:\s*\d{2,3})?)/i
   ];
 
+  // Diagnóstico: intentamos varios patrones, incluidos matches multilínea hasta la siguiente sección
+  const reDiagnostico = [
+    // Diagnóstico en la misma línea: "Diagnóstico: Gripe aguda"
+    /Diagn[oó]stico\s*:?\s*([^\n\r]+?)(?=\s*(?:Profesional|Fecha|Inicio|N°|Direcci[oó]n|Tel[eé]fono|1\.|2\.|3\.|4\.|$))/i,
+    // Diagnóstico que ocupa varias líneas hasta la siguiente etiqueta o fin de bloque
+    /Diagn[oó]stico\s*:?\s*([\s\S]*?)(?=\n\s*(?:Profesional|Fecha|Inicio|N°|Direcci[oó]n|Tel[eé]fono|1\.|2\.|3\.|4\.|$))/i,
+    // Variante alternativa más laxa
+    /Diagn[oó]stico(?:\s+cl[ií]nico)?\s*:?\s*([\s\S]{2,200}?)(?=\n|$)/i
+  ];
+
   // --- 5) Construcción de resultado ---
   let profesional = firstMatch(datosPrestador, reProfesionalPrefer);
   if (
@@ -101,6 +126,18 @@ function extraerDatosLicencia(textoRaw) {
     profesional:  profesional,
     direccion:    firstMatch(datosReposo,     reDireccion),
     telefono:     firstMatch(datosReposo,     reTelefono),
+    diagnostico:  (() => {
+      const candidates = [
+        firstMatch(datosReposo, reDiagnostico),
+        firstMatch(datosPersonales, reDiagnostico),
+        firstMatch(datosPrestador, reDiagnostico),
+        firstMatch(texto, reDiagnostico)
+      ];
+      for (const c of candidates) {
+        if (c && c !== 'No encontrado') return c;
+      }
+      return 'No encontrado';
+    })()
   };
 
   // --- 6) Limpiezas y normalizaciones ---
@@ -120,4 +157,9 @@ function extraerDatosLicencia(textoRaw) {
   datos.fechaTermino = normFecha(datos.fechaTermino);
 
   return datos;
+}
+
+// Si estamos en navegador, exponer la función en window
+if (typeof window !== 'undefined') {
+  window.extraerDatosLicencia = extraerDatosLicencia;
 }
