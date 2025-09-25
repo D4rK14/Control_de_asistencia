@@ -9,18 +9,25 @@
           <p class="text-muted text-center mb-4">
             Por favor, adjunte el documento correspondiente para justificar su inasistencia en la fecha indicada.
           </p>
-          <form action="/enviar_justificacion" method="POST" enctype="multipart/form-data">
+          <form id="form-justificacion" action="/enviar_justificacion" method="POST" enctype="multipart/form-data">
+            {{#if usuario}}
+              <input type="hidden" name="id_usuario" value="{{usuario.id}}">
+            {{/if}}
             <div class="mb-3">
-              <label for="fecha" class="form-label"><strong>Fecha Inicio</strong></label>
-              <input type="date" class="form-control" id="fecha" name="fecha" required>
+              <label for="fecha_inicio" class="form-label"><strong>Fecha Inicio</strong></label>
+              <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
             </div>
-             <div class="mb-3">
-              <label for="fecha" class="form-label"><strong>Fecha Fin</strong></label>
-              <input type="date" class="form-control" id="fecha" name="fecha" required>
+            <div class="mb-3">
+              <label for="fecha_fin" class="form-label"><strong>Fecha Fin</strong></label>
+              <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" required>
+            </div>
+            <div class="mb-3">
+              <label for="motivo" class="form-label"><strong>Motivo</strong></label>
+              <input type="text" class="form-control" id="motivo" name="motivo" placeholder="Ej: Enfermedad" required>
             </div>
             <div class="mb-4">
-              <label for="documento" class="form-label"><strong>Documento de Justificación</strong></label>
-              <input type="file" class="form-control" id="documento" name="pdfFile" accept=".pdf" required>
+              <label for="documento" class="form-label"><strong>Documento de Justificación (PDF, TXT, DOCX)</strong></label>
+              <input type="file" class="form-control" id="documento" name="pdfFile" accept=".pdf,.txt,.doc,.docx,.rtf,.odt" required>
             </div>
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
               <a href="/dashboard_usuario" class="btn btn-secondary me-md-2">
@@ -36,3 +43,6 @@
     </div>
   </div>
 </div>
+<!-- SweetAlert2 para notificaciones en frontend (Swal) -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/js/justificationFrontend.js"></script>
