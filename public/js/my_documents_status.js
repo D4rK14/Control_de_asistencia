@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const documentTypeFilter = document.getElementById('documentTypeFilter');
     const statusFilter = document.getElementById('statusFilter');
+    const folioFilter = document.getElementById('folioFilter');
     const applyFiltersBtn = document.getElementById('applyFiltersBtn');
     const myDocumentsTableBody = document.querySelector('#myDocumentsTable tbody');
 
@@ -12,6 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         return new Date(dateString).toLocaleDateString('es-ES', options);
     };
+
+    // El input de folio se deja siempre editable; el filtrado por folio solo afecta a documentos tipo 'license'.
 
     // Función para cargar todos los documentos del usuario (justificaciones y licencias)
     async function fetchMyDocuments() {
@@ -50,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 type: 'license',
                 typeDisplay: 'Licencia Médica',
                 motiveOrProfessional: l.profesional,
+                folio: l.folio || '',
                 startDate: formatDate(l.fecha_inicio),
                 endDate: formatDate(l.fecha_fin),
                 status: l.estado,
@@ -69,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderDocuments(documentsToRender) {
         myDocumentsTableBody.innerHTML = ''; // Limpiar tabla
         if (documentsToRender.length === 0) {
-            myDocumentsTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay documentos para mostrar.</td></tr>';
+            myDocumentsTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay documentos para mostrar.</td></tr>';
             return;
         }
 
@@ -78,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             row.innerHTML = `
                 <td>${doc.typeDisplay}</td>
                 <td>${doc.motiveOrProfessional || '-'}</td>
+                <td>${doc.folio ? doc.folio : '-'}</td>
                 <td>${doc.startDate} - ${doc.endDate}</td>
                 <td><span class="badge bg-${getStatusBadgeClass(doc.status)}">${doc.status}</span></td>
                 <td>
@@ -101,6 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function applyFilters() {
         const selectedDocType = documentTypeFilter.value;
         const selectedStatus = statusFilter.value;
+        const folioTerm = (folioFilter && folioFilter.value) ? folioFilter.value.trim().toLowerCase() : '';
 
         let filteredDocuments = allDocuments;
 
@@ -112,8 +118,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             filteredDocuments = filteredDocuments.filter(doc => doc.status === selectedStatus);
         }
 
+        // Si se ingresó un folio y el filtro de tipo es 'license' o 'all', filtrar por folio
+        if (folioTerm) {
+            filteredDocuments = filteredDocuments.filter(doc => {
+                // Solo buscar folio en documentos de tipo 'license'
+                if (doc.type !== 'license') return false;
+                return (doc.folio || '').toLowerCase().includes(folioTerm);
+            });
+        }
+
         renderDocuments(filteredDocuments);
     }
+
+    // El input de folio permanece siempre editable; el filtrado se aplica solo a licencias.
 
     // Event Listeners
     applyFiltersBtn.addEventListener('click', applyFilters);
