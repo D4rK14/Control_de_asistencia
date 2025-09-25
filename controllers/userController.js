@@ -177,10 +177,61 @@ const renderUserReports = async (req, res) => {
         };
     });
 
-    // Obtener feriados para el año actual y añadirlos a los eventos del calendario
-    const currentYear = moment().year();
-    const chileanHolidays = await getChileanHolidays(currentYear); // Usar la función importada
-    calendarEvents.push(...chileanHolidays); // Añadir feriados a la lista de eventos
+  // Añadir eventos de justificaciones aprobadas (Falta Justificada - Inasistencia)
+  try {
+    const approvedJustifications = await Justificacion.findAll({ where: { id_usuario, estado: 'Aprobada' } });
+    approvedJustifications.forEach(j => {
+      // Justificacion usa campos fecha_inicio y fecha_fin
+      const start = moment(j.fecha_inicio).format('YYYY-MM-DD');
+      // FullCalendar trata `end` como exclusivo, por eso sumamos 1 día para incluir la fecha_fin
+      const end = moment(j.fecha_fin).add(1, 'day').format('YYYY-MM-DD');
+      calendarEvents.push({
+        title: 'Falta Justificada - Inasistencia',
+        start: start,
+        end: end,
+        allDay: true,
+        backgroundColor: '#20c997', // verde para inasistencia justificada
+        borderColor: '#20c997',
+        extendedProps: {
+          id_categoria: 8,
+          tipo: 'justificacion',
+          referencia_id: j.id
+        }
+      });
+    });
+  } catch (err) {
+    console.error('Error al obtener justificaciones aprobadas para calendarEvents:', err);
+  }
+
+  // Añadir eventos de licencias médicas aprobadas (Falta Justificada - Licencia Médica)
+  try {
+    const approvedLicenses = await LicenciaMedica.findAll({ where: { id_usuario, estado: 'Aprobada' } });
+    approvedLicenses.forEach(l => {
+      // LicenciaMedica usa fecha_inicio (Inicio de Reposo) y fecha_fin (Fecha de Término)
+      const start = moment(l.fecha_inicio).format('YYYY-MM-DD');
+      const end = moment(l.fecha_fin).add(1, 'day').format('YYYY-MM-DD');
+      calendarEvents.push({
+        title: 'Falta Justificada - Licencia Médica',
+        start: start,
+        end: end,
+        allDay: true,
+        backgroundColor: '#0dcaf0', // cyan/info para licencia médica
+        borderColor: '#0dcaf0',
+        extendedProps: {
+          id_categoria: 7,
+          tipo: 'licencia_medica',
+          referencia_id: l.id
+        }
+      });
+    });
+  } catch (err) {
+    console.error('Error al obtener licencias médicas aprobadas para calendarEvents:', err);
+  }
+
+  // Obtener feriados para el año actual y añadirlos a los eventos del calendario
+  const currentYear = moment().year();
+  const chileanHolidays = await getChileanHolidays(currentYear); // Usar la función importada
+  calendarEvents.push(...chileanHolidays); // Añadir feriados a la lista de eventos
 
     res.render("common/reportes_usuario", {
       usuario: { ...req.user, isAdmin: req.user.rol === 'Administrador' },
