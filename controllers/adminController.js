@@ -12,6 +12,27 @@ const bcrypt = require('bcryptjs');     // Importa bcryptjs para encriptar contr
 const { v4: uuidv4 } = require('uuid'); // Para generar secretos QR únicos
 const { transporter, from } = require('../config/mailer'); // Transporter para envío de correos
 const QRCode = require('qrcode'); // Para generar DataURL de códigos QR
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Renderiza una plantilla de correo sencilla ubicada en /correo/*.html
+ * Reemplaza placeholders en formato {{KEY}} por los valores provistos en el objeto data.
+ */
+const renderEmailTemplate = (templateName, data = {}) => {
+    try {
+        const templatePath = path.join(__dirname, '..', 'correo', `${templateName}.html`);
+        let tpl = fs.readFileSync(templatePath, 'utf8');
+        Object.keys(data).forEach(key => {
+            const re = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+            tpl = tpl.replace(re, data[key] ?? '');
+        });
+        return tpl;
+    } catch (err) {
+        console.warn('No se pudo cargar plantilla de correo', templateName, err && err.message ? err.message : err);
+        return null;
+    }
+};
 
 /**
  * @function _fetchUsersAndRolesData
@@ -134,39 +155,51 @@ const createUser = async (req, res) => {
                 qr_login_secret: uuidv4() // Generar y guardar un secreto QR al crear el usuario
         });
 
-        // Intentar enviar correo con credenciales (no bloquear la creación si falla el envío)
+        // Intentar enviar correo con credenciales y QR (no bloquear la creación si falla el envío)
         let mailSent = false;
+        let mailPreviewUrl = null;
         if (transporter && correo) {
-            const mailOptions = {
-                from: from,
-                to: correo,
-                subject: 'Credenciales creadas - Sistema de Asistencia',
-                text: `Se han creado sus credenciales de acceso.\n\nRUT: ${rut}\nContraseña: ${password}\n\nPor favor, cambie su contraseña después del primer ingreso.`,
-                html: `<p>Se han creado sus credenciales de acceso.</p>
-                       <p><strong>RUT:</strong> ${rut}</p>
-                       <p><strong>Contraseña:</strong> ${password}</p>
-                       <p>Por favor, cambie su contraseña después del primer ingreso.</p>`
-            };
+            try {
+                // Generar DataURL del QR y convertirlo a Buffer para adjuntar
+                const qrDataUrl = await QRCode.toDataURL(newUser.qr_login_secret);
+                const base64 = qrDataUrl.split(',')[1];
+                const qrBuffer = Buffer.from(base64, 'base64');
 
-                try {
-                    const info = await transporter.sendMail(mailOptions);
-                    console.log('Correo de bienvenida enviado:', info && info.response ? info.response : info);
-                    mailSent = true;
-                    // Si es Ethereal, obtener URL de previsualización
-                    if (typeof require('nodemailer').getTestMessageUrl === 'function') {
-                        try {
-                            const preview = require('nodemailer').getTestMessageUrl(info);
-                            if (preview) {
-                                mailPreviewUrl = preview;
-                            }
-                        } catch (errPreview) {
-                            console.warn('No se pudo obtener URL de preview de Ethereal:', errPreview && errPreview.message ? errPreview.message : errPreview);
-                        }
+                // Intentar cargar plantilla de correo (editable en /correo/correo_newuser.html)
+                const htmlTemplate = renderEmailTemplate('correo_newuser', {
+                    NOMBRE: `${newUser.nombre} ${newUser.apellido}`,
+                    RUT: rut,
+                    PASSWORD: password
+                });
+
+                const mailOptions = {
+                    from: from,
+                    to: correo,
+                    subject: 'Credenciales creadas - Sistema de Asistencia',
+                    text: `Se han creado sus credenciales de acceso.\n\nRUT: ${rut}\nContraseña: ${password}\n\nPor favor, cambie su contraseña después del primer ingreso.`,
+                    html: htmlTemplate || `<p>Se han creado sus credenciales de acceso.</p><p><strong>RUT:</strong> ${rut}</p><p><strong>Contraseña:</strong> ${password}</p><p>Por favor, cambie su contraseña después del primer ingreso.</p><p><img src="cid:user_qr" alt="QR"/></p>`,
+                    attachments: [
+                        { filename: 'qr.png', content: qrBuffer, cid: 'user_qr' }
+                    ]
+                };
+
+                const info = await transporter.sendMail(mailOptions);
+                console.log('Correo de bienvenida enviado:', info && info.response ? info.response : info);
+                mailSent = true;
+
+                // Si es Ethereal, obtener URL de previsualización
+                if (typeof require('nodemailer').getTestMessageUrl === 'function') {
+                    try {
+                        const preview = require('nodemailer').getTestMessageUrl(info);
+                        if (preview) mailPreviewUrl = preview;
+                    } catch (errPreview) {
+                        console.warn('No se pudo obtener URL de preview de Ethereal:', errPreview && errPreview.message ? errPreview.message : errPreview);
                     }
-                } catch (err) {
-                    console.error('Error enviando correo de bienvenida:', err);
-                    mailSent = false;
                 }
+            } catch (err) {
+                console.error('Error enviando correo de bienvenida con QR:', err && err.message ? err.message : err);
+                mailSent = false;
+            }
         } else {
             console.warn('Transporter de correo no configurado o correo destino vacío; no se envió correo.');
         }
@@ -325,7 +358,47 @@ const regenerateUserQrSecret = async (req, res) => {
         user.qr_login_secret = uuidv4();
         await user.save();
 
-        res.json({ message: 'Secreto QR regenerado con éxito.', qr_login_secret: user.qr_login_secret });
+        // Enviar correo al usuario con el QR actualizado (solo el QR)
+        let mailSent = false;
+        let mailPreviewUrl = null;
+        if (transporter && user.correo) {
+            try {
+                const qrDataUrl = await QRCode.toDataURL(user.qr_login_secret);
+                const base64 = qrDataUrl.split(',')[1];
+                const qrBuffer = Buffer.from(base64, 'base64');
+
+                const htmlTemplate = renderEmailTemplate('correo_updateqr', {
+                    NOMBRE: `${user.nombre} ${user.apellido}`
+                });
+
+                const mailOptions = {
+                    from: from,
+                    to: user.correo,
+                    subject: 'QR actualizado - Sistema de Asistencia',
+                    text: 'Se ha regenerado su código QR de acceso. Adjuntamos la imagen con el nuevo QR.',
+                    html: htmlTemplate || `<p>Se ha regenerado su código QR de acceso.</p><p><img src="cid:updated_qr" alt="QR actualizado"/></p>`,
+                    attachments: [
+                        { filename: 'qr_updated.png', content: qrBuffer, cid: 'updated_qr' }
+                    ]
+                };
+
+                const info = await transporter.sendMail(mailOptions);
+                mailSent = true;
+                if (typeof require('nodemailer').getTestMessageUrl === 'function') {
+                    try {
+                        const preview = require('nodemailer').getTestMessageUrl(info);
+                        if (preview) mailPreviewUrl = preview;
+                    } catch (errPreview) {
+                        console.warn('No se pudo obtener URL de preview de Ethereal para QR regenerado:', errPreview && errPreview.message ? errPreview.message : errPreview);
+                    }
+                }
+            } catch (err) {
+                console.error('Error enviando correo de QR regenerado:', err && err.message ? err.message : err);
+                mailSent = false;
+            }
+        }
+
+        res.json({ message: 'Secreto QR regenerado con éxito.', qr_login_secret: user.qr_login_secret, mailSent, mailPreviewUrl });
     } catch (error) {
         console.error('Error al regenerar secreto QR:', error);
         res.status(500).json({ error: 'Error al regenerar secreto QR.', details: error.message });

@@ -446,11 +446,44 @@ document.addEventListener('DOMContentLoaded', () => {
           cancelButtonText: 'Cancelar'
         }).then(async (r) => {
           if (r.isConfirmed) {
+            // Mostrar estado de carga en el botón original
+            const originalBtn = target;
+            const originalBtnHtml = originalBtn.innerHTML;
             try {
+              originalBtn.disabled = true;
+              originalBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Regenerando...`;
+
               const resp = await fetch(`/admin/users/${userIdRegen}/regen-qr`, { method: 'PUT' });
               const json = await resp.json();
+
               if (resp.ok) {
-                Swal.fire('Hecho', 'Secreto QR regenerado con éxito.', 'success');
+                // Mostrar mensaje y, si existe preview, ofrecer abrirlo (igual que al crear usuario)
+                let note = json.message || 'Secreto QR regenerado con éxito.';
+                if (typeof json.mailSent !== 'undefined') {
+                  if (json.mailSent) {
+                    note += '\n\nCorreo con el nuevo QR enviado al usuario.';
+                  } else {
+                    note += '\n\nNo se pudo enviar el correo con el nuevo QR. Revise la configuración del servidor de correo.';
+                  }
+                }
+
+                if (json.mailPreviewUrl) {
+                  Swal.fire({
+                    title: 'Hecho',
+                    text: note,
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: 'Abrir preview del correo',
+                    cancelButtonText: 'Cerrar'
+                  }).then((r2) => {
+                    if (r2.isConfirmed) {
+                      window.open(json.mailPreviewUrl, '_blank');
+                    }
+                  });
+                } else {
+                  Swal.fire('Hecho', note, json.mailSent ? 'success' : 'warning');
+                }
+
                 loadUsers();
               } else {
                 Swal.fire('Error', json.error || 'No se pudo regenerar el secreto QR', 'error');
@@ -458,6 +491,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
               console.error('Error al regenerar QR:', err);
               Swal.fire('Error', 'Error de conexión al regenerar QR', 'error');
+            } finally {
+              // Restaurar estado del botón
+              originalBtn.disabled = false;
+              originalBtn.innerHTML = originalBtnHtml;
             }
           }
         });
