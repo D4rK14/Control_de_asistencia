@@ -137,8 +137,9 @@ const loginWithQr = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: "strict",
-      maxAge: Math.min(15 * 60 * 1000, msTo22),
+      maxAge: Math.min(8 * 60 * 60 * 1000, msTo22), // el menor entre 8h y lo que falta hasta las 22:00
     });
+
 
     if (req.session && req.session.cookie) {
       req.session.cookie.maxAge = Math.min(req.session.cookie.maxAge || (24*60*60*1000), msTo22);
