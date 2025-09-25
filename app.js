@@ -28,15 +28,16 @@ const app = express();
 const PORT = process.env.PORT || 3000; // Define el puerto del servidor, usando una variable de entorno o el puerto 3000 por defecto
 
 // --- Configuración de Multer para la subida de archivos ---
-// Destino para almacenar los archivos subidos (ej: justificaciones, licencias)
-const upload = multer({ dest: "uploads/" });
+// (Los controladores individuales configuran su propio storage: uploads_licmed y uploads_inasistencia)
 
 // --- Middlewares globales ---
 // Sirve archivos estáticos (CSS, JS del frontend, imágenes) desde la carpeta 'public'.
 // Esto permite que el navegador cargue recursos como 'style.css' o 'script.js'.
 app.use(express.static(path.join(__dirname, 'public')));
 // Servir archivos subidos (licencias/justificaciones)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Servir uploads de licencias médicas y justificaciones en nuevas carpetas
+app.use('/uploads_licmed', express.static(path.join(__dirname, 'uploads_licmed')));
+app.use('/uploads_inasistencia', express.static(path.join(__dirname, 'uploads_inasistencia')));
 
 // Middleware para parsear el cuerpo de las peticiones HTTP. Permite leer datos enviados por formularios HTML.
 app.use(express.urlencoded({ extended: true }));
@@ -143,21 +144,19 @@ app.use('/reports', reportRoutes); // Usa las rutas de reportes con prefijo /rep
 app.use('/', adminRoutes); // Usa las rutas de administración de usuarios
 
 // Fallback explícito para servir archivos en uploads por ruta parametrizada
-app.get('/uploads/:userId/:file', (req, res, next) => {
+// Fallbacks para servir archivos por rutas parametrizadas (licencias y justificaciones)
+app.get('/uploads_licmed/:userId/:file', (req, res, next) => {
     const userId = String(req.params.userId || '').replace(/[^0-9]/g, '');
     const file = String(req.params.file || '').replace(/\.{2,}/g, '.');
-    const abs = path.join(__dirname, 'uploads', userId, file);
-    return res.sendFile(abs, err => {
-        if (err) return next();
-    });
+    const abs = path.join(__dirname, 'uploads_licmed', userId, file);
+    return res.sendFile(abs, err => { if (err) return next(); });
 });
 
-app.get('/uploads/:file', (req, res, next) => {
+app.get('/uploads_inasistencia/:userId/:file', (req, res, next) => {
+    const userId = String(req.params.userId || '').replace(/[^0-9]/g, '');
     const file = String(req.params.file || '').replace(/\.{2,}/g, '.');
-    const abs = path.join(__dirname, 'uploads', file);
-    return res.sendFile(abs, err => {
-        if (err) return next();
-    });
+    const abs = path.join(__dirname, 'uploads_inasistencia', userId, file);
+    return res.sendFile(abs, err => { if (err) return next(); });
 });
 
 /**

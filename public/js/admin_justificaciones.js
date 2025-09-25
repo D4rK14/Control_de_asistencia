@@ -24,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const rows = items.map(j => {
             const usuario = j.usuario ? `${j.usuario.nombre} ${j.usuario.apellido} (${j.usuario.rut || ''})` : `ID ${j.id_usuario}`;
-            const archivo = j.archivo ? `<a href="/uploads/${encodeURIComponent(j.archivo)}" target="_blank">Ver</a>` : '<span class="text-muted">N/A</span>';
+            // j.archivo guarda "<id_usuario>/<filename>"
+            const archivo = j.archivo ? `<a href="/uploads_inasistencia/${encodeURIComponent(j.archivo)}" target="_blank">Ver</a>` : '<span class="text-muted">N/A</span>';
             
             const isOwnJustification = window.currentUser && j.usuario && j.usuario.id === window.currentUser.id;
             const disabledAttr = isOwnJustification ? 'disabled' : '';
@@ -32,7 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const select = `<select class="form-select form-select-sm estado-select" data-id="${j.id}" ${disabledAttr}>
                 ${ESTADOS.map(e => `<option value="${e}" ${e === j.estado ? 'selected' : ''}>${e}</option>`).join('')}
             </select>`;
-            const fechaSolicitud = j.fecha_solicitud ? new Date(j.fecha_solicitud).toLocaleString() : '';
+
+            const fechaSolicitud = j.createdAt ? new Date(j.createdAt).toLocaleString() : '';
             const fechaInicio = j.fecha_inicio ? new Date(j.fecha_inicio).toLocaleDateString() : '';
             const fechaFin = j.fecha_fin ? new Date(j.fecha_fin).toLocaleDateString() : '';
 

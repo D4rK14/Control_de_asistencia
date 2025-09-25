@@ -16,7 +16,7 @@ const QRCode = require('qrcode'); // Importar la librería qrcode
 const moment = require('moment-timezone'); // Para formatear fechas
 // const fetch = require('node-fetch'); // Ya no es necesario aquí
 const { getChileanHolidays } = require('../helpers/holidayUtils'); // Importar desde el nuevo archivo
-const Justificacion = require('../models/Justification'); // Importar el modelo Justificacion
+const Justificacion = require('../models/justification'); // Importar el modelo Justificacion
 const LicenciaMedica = require('../models/lecense'); // Importar el modelo LicenciaMedica
 
 /**
@@ -229,10 +229,10 @@ const generateUserQrLogin = async (req, res) => {
 const getMyJustifications = async (req, res) => {
     try {
         const id_usuario = req.user.id; // ID del usuario logueado
-        const justificaciones = await Justificacion.findAll({
-            where: { id_usuario },
-            order: [['fecha_solicitud', 'DESC']]
-        });
+    const justificaciones = await Justificacion.findAll({
+      where: { id_usuario },
+      order: [['id', 'DESC']]
+    });
         res.json({ justificaciones: justificaciones.map(j => j.toJSON()) });
     } catch (error) {
         console.error("Error al obtener justificaciones del usuario:", error);

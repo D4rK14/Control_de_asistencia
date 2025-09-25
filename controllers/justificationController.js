@@ -4,7 +4,7 @@
  * @description Controlador para listar y actualizar el estado de justificaciones comunes.
  */
 
-const Justificacion = require('../models/Justification');
+const Justificacion = require('../models/justification');
 const User = require('../models/User');
 const Rol = require('../models/Rol'); // Added Rol model import
 
@@ -27,7 +27,7 @@ const getAllJustifications = async (req, res) => {
     try {
         const justificaciones = await Justificacion.findAll({
             include: [{ model: User, as: 'usuario', attributes: ['id', 'rut', 'nombre', 'apellido', 'correo'] }],
-            order: [['fecha_solicitud', 'DESC']]
+            order: [['id', 'DESC']]
         });
         const plain = justificaciones.map(j => j.toJSON());
         res.json({ justificaciones: plain });

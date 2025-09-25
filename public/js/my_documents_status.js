@@ -40,7 +40,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 startDate: formatDate(j.fecha_inicio),
                 endDate: formatDate(j.fecha_fin),
                 status: j.estado,
-                file: j.archivo ? `/uploads/${j.archivo}` : null // Asumiendo que los archivos están en /uploads
+                // Las justificaciones se guardan en uploads_inasistencia/<userId>/<filename>
+                file: j.archivo ? `/uploads_inasistencia/${j.archivo}` : null // j.archivo ya almacena "<id_usuario>/<filename>"
             }));
 
             // Formatear licencias
@@ -52,7 +53,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 startDate: formatDate(l.fecha_inicio),
                 endDate: formatDate(l.fecha_fin),
                 status: l.estado,
-                file: l.archivo ? `/uploads/${l.id_usuario}/${l.archivo}` : null // Asumiendo estructura de /uploads/<userId>/<filename>
+                // Las licencias médicas se guardan en uploads_licmed/<userId>/<filename>
+                file: l.archivo ? `/uploads_licmed/${l.id_usuario}/${l.archivo}` : null // Asumiendo l.archivo es solo el filename
             }));
 
             allDocuments = [...formattedJustificaciones, ...formattedLicencias];

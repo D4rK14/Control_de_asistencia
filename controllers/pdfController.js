@@ -18,7 +18,103 @@ const pdfParse = require("pdf-parse"); // Librería para extraer texto de archiv
  * @returns {void} Renderiza la plantilla `justificaciones/inasistencia.hbs`.
  */
 const renderUpload = (req, res) => {
-  res.render("justificaciones/inasistencia");
+  // Pasar el usuario a la vista para poder obtener el id en caso de ser necesario
+  res.render("justificaciones/inasistencia", { usuario: req.user });
+};
+
+// Multer storage para las justificaciones de inasistencia.
+const path = require('path');
+const multer = require('multer');
+const moment = require('moment-timezone');
+const Justificacion = require('../models/justification');
+
+const storageInasistencia = multer.diskStorage({
+  destination: (req, file, cb) => {
+    try {
+      const userId = (req.user && req.user.id) ? String(req.user.id) : 'unknown';
+      const dir = path.join('uploads_inasistencia', userId);
+      require('fs').mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    } catch (e) {
+      console.error('Error creando directorio de uploads_inasistencia por usuario:', e);
+      cb(null, path.join('uploads_inasistencia'));
+    }
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const uploadInasistencia = multer({ storage: storageInasistencia });
+
+/**
+ * @function procesarJustificacion
+ * @description Guarda en la base de datos una justificación de inasistencia y el archivo
+ * subido en la carpeta `uploads_inasistencia/<userId>/`.
+ */
+const procesarJustificacion = async (req, res) => {
+  try {
+    // Se espera que el archivo venga en el campo 'pdfFile' (conservamos nombre del formulario)
+    if (!req.file) {
+      return res.status(400).send('No se ha subido ningún archivo.');
+    }
+
+    let id_usuario = null;
+    if (req.user && req.user.id) {
+      id_usuario = Number(req.user.id);
+    } else if (req.body && req.body.id_usuario) {
+      id_usuario = Number(req.body.id_usuario);
+    }
+
+    if (!id_usuario || !Number.isInteger(id_usuario) || id_usuario <= 0) {
+      // eliminar archivo si se creó
+      try { require('fs').unlinkSync(req.file.path); } catch (e) {}
+      return res.status(400).send('ID de usuario no proporcionado o inválido.');
+    }
+
+    // Validar y normalizar entradas del formulario
+    const fecha_inicio = req.body.fecha_inicio || req.body.fecha || null;
+    const fecha_fin = req.body.fecha_fin || req.body.fecha || null;
+    const motivo = req.body.motivo || req.body.motivo_text || 'Sin motivo especificado';
+
+    if (!fecha_inicio || !fecha_fin) {
+      // eliminar archivo si se creó
+      try { require('fs').unlinkSync(req.file.path); } catch (e) {}
+      return res.status(400).send('Faltan las fechas de inicio/fin.');
+    }
+
+    // Guardar registro en la tabla justificacion_comun
+    // Preferir la fecha/hora enviada por el cliente (para que coincida con el header), si viene y es válida
+    let fechaSolicitudToUse = null;
+    if (req.body && req.body.client_datetime) {
+      const c = moment(req.body.client_datetime, 'YYYY-MM-DD HH:mm:ss', true);
+      if (c.isValid()) {
+        fechaSolicitudToUse = c.format('YYYY-MM-DD HH:mm:ss');
+      }
+    }
+    if (!fechaSolicitudToUse) {
+      fechaSolicitudToUse = moment().tz('America/Santiago').format('YYYY-MM-DD HH:mm:ss');
+    }
+
+    const nueva = await Justificacion.create({
+      id_usuario: id_usuario,
+      fecha_inicio: new Date(fecha_inicio),
+      fecha_fin: new Date(fecha_fin),
+      motivo: motivo,
+      archivo: `${id_usuario}/${req.file.filename}`,
+      estado: 'Pendiente'
+    });
+
+    // Responder con JSON para que el frontend (fetch) pueda mostrar notificación y redirigir
+    return res.status(201).json({ message: 'Justificación enviada correctamente', justificacion: nueva });
+  } catch (err) {
+    console.error('Error al procesar justificación:', err);
+    // intentar eliminar archivo si existe
+    if (req.file && req.file.path) {
+      try { require('fs').unlinkSync(req.file.path); } catch (e) {}
+    }
+    return res.status(500).json({ error: 'Error interno al guardar la justificación' });
+  }
 };
 
 /**
@@ -79,5 +175,7 @@ const procesarPDF = async (req, res) => {
 module.exports = {
   renderUpload,
   renderPdfView,
-  procesarPDF
+  procesarPDF,
+  procesarJustificacion,
+  uploadInasistencia
 };

@@ -74,10 +74,10 @@ module.exports.downloadLicenseFile = async (req, res) => {
         const rawArchivo = String(licencia.archivo);
         const safeParts = rawArchivo.split(/[\\/]/).filter(Boolean);
         const candidates = [
-            path.join(__dirname, '..', 'uploads', ...safeParts),
-            path.join(process.cwd(), 'uploads', ...safeParts),
-            licencia.id_usuario ? path.join(__dirname, '..', 'uploads', String(licencia.id_usuario), rawArchivo) : null,
-            licencia.id_usuario ? path.join(process.cwd(), 'uploads', String(licencia.id_usuario), rawArchivo) : null
+            path.join(__dirname, '..', 'uploads_licmed', ...safeParts),
+            path.join(process.cwd(), 'uploads_licmed', ...safeParts),
+            licencia.id_usuario ? path.join(__dirname, '..', 'uploads_licmed', String(licencia.id_usuario), rawArchivo) : null,
+            licencia.id_usuario ? path.join(process.cwd(), 'uploads_licmed', String(licencia.id_usuario), rawArchivo) : null
         ].filter(Boolean);
 
         let foundPath = null;

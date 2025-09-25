@@ -27,10 +27,6 @@ const Justificacion = sequelize.define('justificacion_comun', {
         allowNull: false // No permite valores nulos, cada justificación debe estar asociada a un usuario.
     },
     // Fecha en que la justificación fue solicitada.
-    fecha_solicitud: {
-        type: DataTypes.DATE,
-        allowNull: false // No permite valores nulos.
-    },
     // Fecha de inicio del período que la justificación cubre.
     fecha_inicio: {
         type: DataTypes.DATE,

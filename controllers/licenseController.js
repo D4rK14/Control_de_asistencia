@@ -11,13 +11,13 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         try {
             const userId = (req.user && req.user.id) ? String(req.user.id) : 'unknown';
-            const dir = path.join('uploads', userId);
+            const dir = path.join('uploads_licmed', userId);
             // Asegurar que el directorio por usuario exista
             require('fs').mkdirSync(dir, { recursive: true });
             cb(null, dir);
         } catch (e) {
-            console.error('Error creando directorio de uploads por usuario:', e);
-            cb(null, 'uploads/');
+            console.error('Error creando directorio de uploads_licmed por usuario:', e);
+            cb(null, path.join('uploads_licmed'));
         }
     },
     filename: (req, file, cb) => {
